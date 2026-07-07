@@ -1073,7 +1073,7 @@ function renderBar(agg){
     data:{
       labels,
       datasets:[
-        {type:'bar', label:'Gross Sales', data, backgroundColor:colors, borderRadius:6, maxBarThickness:46, yAxisID:'y'},
+        {type:'bar', label:'Gross Sales', data, backgroundColor:colors, borderRadius:0, maxBarThickness:46, yAxisID:'y'},
         {type:'line', label:'Cumulative %', data:cumPct, yAxisID:'y1', borderColor:'#F4B43A', backgroundColor:'#F4B43A', borderWidth:2.5, pointRadius:4, pointBackgroundColor:'#F4B43A', tension:0.25}
       ]
     },
@@ -1121,7 +1121,7 @@ function renderWaterfall(agg){
   if (waterfallChart) waterfallChart.destroy();
   waterfallChart = new Chart(ctx, {
     type:'bar',
-    data:{labels, datasets:[{data, backgroundColor:colors, borderRadius:5, maxBarThickness:60}]},
+    data:{labels, datasets:[{data, backgroundColor:colors, borderRadius:0, maxBarThickness:60}]},
     options:{
       plugins:{
         legend:{display:false},
@@ -1150,7 +1150,7 @@ function renderStackedMix(){
       return c ? c.gross : 0;
     }),
     backgroundColor: colorForChannel(chan, idx),
-    borderRadius:4,
+    borderRadius:0,
     maxBarThickness:52,
     stack:'gross'
   }));
@@ -1254,7 +1254,7 @@ function renderTrend(){
         },
         {
           type:'bar', label:'Orders', data:ordersData, yAxisID:'y1',
-          backgroundColor:'rgba(232,67,46,0.34)', borderRadius:5, maxBarThickness:34
+          backgroundColor:'rgba(232,67,46,0.34)', borderRadius:0, maxBarThickness:34
         }
       ]
     },
