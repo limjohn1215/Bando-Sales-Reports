@@ -7,7 +7,32 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script>
+  // Chart.js loaded defensively from multiple CDNs in sequence — if one provider
+  // is blocked or briefly unavailable, we fall through to the next before giving up.
+  window.__chartLibReady = false;
+  window.__chartLibMissing = false;
+  (function loadChartJs(sources, i){
+    if (i >= sources.length){
+      window.__chartLibMissing = true;
+      window.__chartLibReady = true;
+      if (window.__bandoBoot) window.__bandoBoot();
+      return;
+    }
+    const s = document.createElement('script');
+    s.src = sources[i];
+    s.onload = () => {
+      window.__chartLibReady = true;
+      if (window.__bandoBoot) window.__bandoBoot();
+    };
+    s.onerror = () => { s.remove(); loadChartJs(sources, i + 1); };
+    document.head.appendChild(s);
+  })([
+    'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js',
+    'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js',
+    'https://unpkg.com/chart.js@4.4.4/dist/chart.umd.min.js'
+  ], 0);
+</script>
 <style>
   :root{
     --ink:#16231F;
@@ -779,7 +804,7 @@ function renderKPIs(agg, prevAgg){
 
 let dataSourceState = 'live'; // 'live' | 'fallback'
 let fallbackReason = '';
-const chartLibMissing = typeof Chart === 'undefined';
+function chartLibMissing(){ return !!window.__chartLibMissing; }
 
 function escHtml(s){
   return String(s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -804,12 +829,12 @@ function clearBanners(){
 
 function renderBanner(agg){
   let html = '';
-  if (chartLibMissing){
+  if (chartLibMissing()){
     html += `
       <div class="banner error">
         <div>
           <b>Charts can't load</b>
-          The Chart.js library (loaded from cdnjs.cloudflare.com) didn't load in this browser — the KPI numbers and table above are still accurate, but chart panels will stay blank. This usually means a firewall, ad blocker, or network policy is blocking that CDN. Try a different network, or disable any content/script blockers for this page.
+          The Chart.js library didn't load from any of 3 different providers we tried (cdnjs, jsDelivr, unpkg) — the KPI numbers and table above are still accurate, but chart panels will stay blank. This points to something on this network or browser blocking script downloads broadly (firewall, security software, or a content blocker). Try a different network to confirm.
         </div>
       </div>`;
   }
@@ -1172,8 +1197,15 @@ document.addEventListener('visibilitychange', () => {
 });
 
 /* ======================= BOOT ======================= */
-fetchData(false);
-pollTimer = setInterval(()=>fetchData(true), CONFIG.REFRESH_MS);
+window.__bandoBoot = function(){
+  fetchData(false);
+  pollTimer = setInterval(()=>fetchData(true), CONFIG.REFRESH_MS);
+};
+if (window.__chartLibReady){
+  window.__bandoBoot();
+}
+// otherwise the Chart.js loader will call window.__bandoBoot() itself once it
+// finishes trying all CDN sources (success or not).
 </script>
 </body>
 </html>
