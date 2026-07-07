@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Bando — Weekly Sales Dashboard</title>
+<title>THE BANDO — Sales Command Center</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Mali:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script>
   // Chart.js loaded defensively from multiple CDNs in sequence — if one provider
@@ -35,96 +35,226 @@
 </script>
 <style>
   :root{
-    --ink:#16231F;
-    --paper:#EFF2EE;
-    --surface:#FFFFFF;
-    --line:#DBE1DB;
-    --muted:#5B655F;
-    --primary:#1F4B43;
-    --primary-soft:#E4EDEA;
-    --warm:#E3A038;
-    --warm-soft:#FBEDD4;
-    --bad:#B3432E;
-    --bad-soft:#F7E4DF;
+    --ink:#FFF4DF;
+    --paper:#090806;
+    --surface:#15110D;
+    --surface-2:#201811;
+    --surface-3:#2A1F17;
+    --line:#463626;
+    --line-strong:#6F5132;
+    --muted:#BDAF99;
+    --primary:#F4B43A;
+    --primary-soft:#3B2813;
+    --warm:#FFD15E;
+    --warm-soft:#332412;
+    --bad:#E8432E;
+    --bad-soft:#3A1712;
+    --good:#31B36D;
 
-    --square:#3E6C8C;
-    --doordash:#C1432A;
-    --ubereats:#2F9E6E;
-    --wix:#7C5CBF;
+    --square:#5D86B3;
+    --doordash:#F04A31;
+    --ubereats:#39C978;
+    --wix:#B592FF;
 
-    --radius:14px;
-    --shadow:0 1px 2px rgba(22,35,31,0.06), 0 8px 24px -12px rgba(22,35,31,0.18);
-    --font-display:'Space Grotesk', sans-serif;
-    --font-body:'Inter', sans-serif;
-    --font-mono:'IBM Plex Mono', monospace;
+    --radius:18px;
+    --radius-tight:12px;
+    --shadow:0 12px 36px -22px rgba(0,0,0,0.95), inset 0 1px 0 rgba(255,255,255,0.045);
+    --glow:0 0 0 1px rgba(244,180,58,0.08), 0 0 36px rgba(244,180,58,0.08);
+    --font-display:'Pearl Jean','Bebas Neue','Impact',sans-serif;
+    --font-body:'Mali','Inter',sans-serif;
+    --font-mono:'IBM Plex Mono',monospace;
   }
 
   *{box-sizing:border-box;}
+  html{background:var(--paper);}
   body{
     margin:0;
-    background:var(--paper);
+    min-height:100vh;
     color:var(--ink);
     font-family:var(--font-body);
     -webkit-font-smoothing:antialiased;
+    background:
+      radial-gradient(circle at 10% 0%, rgba(232,67,46,0.18), transparent 28%),
+      radial-gradient(circle at 90% 8%, rgba(244,180,58,0.18), transparent 32%),
+      linear-gradient(135deg, #090806 0%, #14100C 42%, #0A0806 100%);
+    position:relative;
+    overflow-x:hidden;
+  }
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    opacity:.18;
+    background-image:
+      linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+    background-size:34px 34px;
+    mask-image:linear-gradient(to bottom, rgba(0,0,0,.95), rgba(0,0,0,.24));
+  }
+  body::after{
+    content:"THE BANDO  •  FEED THE PEOPLE  •  FUEL THE CULTURE  •  EMPOWER THE COMMUNITY";
+    position:fixed;
+    left:-6vw;
+    right:-6vw;
+    top:44%;
+    transform:rotate(-6deg);
+    font-family:var(--font-display);
+    font-size:clamp(54px, 12vw, 170px);
+    letter-spacing:.04em;
+    line-height:.8;
+    color:rgba(255,244,223,.028);
+    white-space:nowrap;
+    pointer-events:none;
   }
   a{color:inherit;}
 
-  .shell{max-width:1360px;margin:0 auto;padding:28px 24px 64px;}
+  .shell{max-width:1380px;margin:0 auto;padding:30px 24px 68px;position:relative;z-index:1;}
 
   /* ---------- HEADER ---------- */
   header.top{
     display:flex;
     justify-content:space-between;
-    align-items:flex-start;
-    gap:24px;
+    align-items:stretch;
+    gap:18px;
     flex-wrap:wrap;
     margin-bottom:18px;
+    background:
+      linear-gradient(135deg, rgba(244,180,58,.14), rgba(232,67,46,.07) 42%, rgba(21,17,13,.92)),
+      repeating-linear-gradient(-45deg, rgba(244,180,58,.10) 0 10px, transparent 10px 21px);
+    border:1px solid var(--line-strong);
+    border-radius:26px;
+    padding:22px;
+    box-shadow:var(--shadow), var(--glow);
+    position:relative;
+    overflow:hidden;
   }
+  header.top::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:radial-gradient(circle at 78% 0%, rgba(255,209,94,.18), transparent 36%);
+    pointer-events:none;
+  }
+  header.top::after{
+    content:"AUTHORIZED SALES VIEW";
+    position:absolute;
+    right:-42px;
+    bottom:20px;
+    transform:rotate(-10deg);
+    border:2px solid rgba(232,67,46,.52);
+    color:rgba(232,67,46,.68);
+    font-family:var(--font-mono);
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.18em;
+    padding:8px 50px;
+    border-radius:7px;
+  }
+  .brand{position:relative;z-index:1;min-width:min(100%,520px);}
+  .brand .eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:7px;
+    font-family:var(--font-mono);
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--primary);
+  }
+  .brand .eyebrow::before{content:"";width:34px;height:3px;background:var(--bad);border-radius:4px;box-shadow:18px 0 0 var(--primary);}
   .brand h1{
     font-family:var(--font-display);
-    font-size:28px;
-    font-weight:700;
-    letter-spacing:0.01em;
-    margin:0 0 4px;
+    font-size:clamp(56px, 8vw, 112px);
+    line-height:.82;
+    font-weight:400;
+    letter-spacing:.035em;
+    margin:0 0 10px;
+    text-transform:uppercase;
+    color:var(--ink);
+    text-shadow:3px 3px 0 #000, 6px 6px 0 rgba(232,67,46,.52), 0 0 26px rgba(244,180,58,.18);
   }
   .brand p{
     margin:0;
     color:var(--muted);
-    font-size:13.5px;
+    font-size:14px;
+    max-width:780px;
   }
+  .brand-stamps{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
+  .brand-stamps span{
+    display:inline-flex;
+    align-items:center;
+    border:1px solid rgba(244,180,58,.32);
+    background:rgba(0,0,0,.25);
+    color:var(--ink);
+    padding:6px 10px;
+    border-radius:999px;
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+  }
+  .header-right{position:relative;z-index:1;display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;gap:12px;min-width:210px;}
 
   .live-chip{
-    display:inline-flex;align-items:center;gap:7px;
+    display:inline-flex;align-items:center;gap:8px;
     font-family:var(--font-mono);
-    font-size:11.5px;
-    color:var(--muted);
-    background:var(--surface);
-    border:1px solid var(--line);
-    padding:6px 12px;
+    font-size:11px;
+    color:var(--ink);
+    background:rgba(9,8,6,.78);
+    border:1px solid rgba(244,180,58,.28);
+    padding:8px 12px;
     border-radius:999px;
     white-space:nowrap;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
   }
-  .live-dot{width:7px;height:7px;border-radius:50%;background:var(--primary);animation:pulse 2.2s infinite;flex-shrink:0;}
+  .mini-plate{
+    border:1px dashed rgba(255,244,223,.28);
+    color:var(--muted);
+    background:rgba(0,0,0,.24);
+    padding:9px 11px;
+    border-radius:12px;
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    line-height:1.4;
+    text-align:right;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+  }
+  .live-dot{width:8px;height:8px;border-radius:50%;background:var(--good);animation:pulse 2.2s infinite;flex-shrink:0;}
   .live-dot.stale{background:var(--warm);animation:none;}
   .live-dot.error{background:var(--bad);animation:none;}
   @keyframes pulse{
-    0%{box-shadow:0 0 0 0 rgba(31,75,67,0.35);}
-    70%{box-shadow:0 0 0 6px rgba(31,75,67,0);}
-    100%{box-shadow:0 0 0 0 rgba(31,75,67,0);}
+    0%{box-shadow:0 0 0 0 rgba(49,179,109,0.45);}
+    70%{box-shadow:0 0 0 7px rgba(49,179,109,0);}
+    100%{box-shadow:0 0 0 0 rgba(49,179,109,0);}
   }
 
-  /* week rhythm strip - signature element */
-  .rhythm{display:flex;gap:4px;margin:14px 0 22px;}
+  /* week rhythm strip - Bando tape */
+  .rhythm{display:flex;gap:6px;margin:16px 0 7px;}
   .rhythm .seg{
     flex:1;
-    height:6px;
-    border-radius:4px;
-    background:var(--line);
+    height:9px;
+    border-radius:999px;
+    background:rgba(255,244,223,.10);
+    border:1px solid rgba(255,244,223,.08);
     position:relative;
+    overflow:hidden;
   }
-  .rhythm .seg.active{background:var(--primary);}
-  .rhythm-wrap{display:flex;flex-direction:column;gap:6px;}
-  .rhythm-labels{display:flex;gap:4px;font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:0.06em;}
+  .rhythm .seg.active{
+    background:linear-gradient(90deg, var(--bad), var(--primary));
+    box-shadow:0 0 18px rgba(244,180,58,.16);
+  }
+  .rhythm .seg.active::after{
+    content:"";position:absolute;inset:0;
+    background:repeating-linear-gradient(-45deg, rgba(0,0,0,.35) 0 5px, transparent 5px 10px);
+    opacity:.38;
+  }
+  .rhythm-wrap{display:flex;flex-direction:column;gap:6px;margin-bottom:22px;}
+  .rhythm-labels{display:flex;gap:6px;font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;}
   .rhythm-labels span{flex:1;text-align:center;}
 
   /* ---------- CONTROLS ---------- */
@@ -133,7 +263,7 @@
     align-items:center;
     gap:10px;
     flex-wrap:wrap;
-    background:var(--surface);
+    background:linear-gradient(180deg, rgba(32,24,17,.96), rgba(18,14,10,.96));
     border:1px solid var(--line);
     border-radius:var(--radius);
     padding:14px 16px;
@@ -141,41 +271,42 @@
     box-shadow:var(--shadow);
   }
   .seg-toggle{
-    display:flex;background:var(--paper);border-radius:9px;padding:3px;border:1px solid var(--line);
+    display:flex;background:rgba(0,0,0,.24);border-radius:12px;padding:4px;border:1px solid var(--line);
   }
   .seg-toggle button{
-    border:none;background:transparent;padding:7px 14px;border-radius:7px;
-    font-family:var(--font-body);font-weight:600;font-size:13px;color:var(--muted);cursor:pointer;
+    border:none;background:transparent;padding:8px 14px;border-radius:9px;
+    font-family:var(--font-body);font-weight:800;font-size:13px;color:var(--muted);cursor:pointer;
   }
-  .seg-toggle button.active{background:var(--primary);color:#fff;}
-  #metricToggle{padding:2px;}
-  #metricToggle button{padding:5px 11px;font-size:11.5px;text-transform:none;}
+  .seg-toggle button.active{background:linear-gradient(135deg, var(--primary), #D35B28);color:#150F09;box-shadow:0 8px 18px -14px rgba(244,180,58,.9);}
+  #metricToggle{padding:3px;}
+  #metricToggle button{padding:6px 11px;font-size:11.5px;text-transform:none;}
   .card h2{flex-wrap:wrap;row-gap:8px;}
 
   select, input[type=date]{
     font-family:var(--font-body);
     font-size:13.5px;
-    font-weight:500;
+    font-weight:700;
     color:var(--ink);
     border:1px solid var(--line);
-    background:var(--surface);
+    background:#100C09;
     padding:8px 12px;
-    border-radius:8px;
+    border-radius:10px;
+    color-scheme:dark;
   }
-  select:focus, input:focus, button:focus{outline:2px solid var(--primary);outline-offset:1px;}
+  select:focus, input:focus, button:focus{outline:2px solid var(--primary);outline-offset:2px;}
 
   .control-group{display:flex;align-items:center;gap:8px;}
-  .control-group label{font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.04em;}
+  .control-group label{font-size:11px;color:var(--primary);font-weight:800;text-transform:uppercase;letter-spacing:.09em;}
 
   .spacer{flex:1;}
 
   button.icon-btn{
-    display:inline-flex;align-items:center;gap:6px;
-    border:1px solid var(--line);background:var(--surface);
-    padding:8px 13px;border-radius:8px;font-family:var(--font-body);font-weight:600;font-size:13px;
+    display:inline-flex;align-items:center;gap:7px;
+    border:1px solid rgba(244,180,58,.34);background:rgba(244,180,58,.09);
+    padding:9px 13px;border-radius:10px;font-family:var(--font-body);font-weight:800;font-size:13px;
     color:var(--primary);cursor:pointer;
   }
-  button.icon-btn:hover{background:var(--primary-soft);}
+  button.icon-btn:hover{background:rgba(244,180,58,.16);transform:translateY(-1px);}
   button.icon-btn svg{width:14px;height:14px;}
   .spin{animation:spin 0.8s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
@@ -188,14 +319,15 @@
     margin-bottom:22px;
     font-size:13.5px;
     line-height:1.5;
+    box-shadow:var(--shadow);
   }
-  .banner.warn{background:var(--warm-soft);border:1px solid #EFCE94;}
-  .banner.error{background:var(--bad-soft);border:1px solid #E3B2A5;}
-  .banner b{display:block;margin-bottom:4px;font-family:var(--font-display);font-size:13.5px;}
+  .banner.warn{background:var(--warm-soft);border:1px solid rgba(255,209,94,.35);}
+  .banner.error{background:var(--bad-soft);border:1px solid rgba(232,67,46,.45);}
+  .banner b{display:block;margin-bottom:4px;font-family:var(--font-display);font-weight:400;letter-spacing:.05em;text-transform:uppercase;font-size:22px;}
   .banner ul{margin:6px 0 0;padding-left:18px;}
   .banner li{margin-bottom:3px;}
-  .banner .chan-tag{font-family:var(--font-mono);font-size:11px;font-weight:600;padding:1px 6px;border-radius:5px;background:rgba(0,0,0,0.06);margin-right:6px;}
-  .banner code{font-family:var(--font-mono);background:rgba(0,0,0,0.07);padding:1px 5px;border-radius:4px;font-size:12px;}
+  .banner .chan-tag{font-family:var(--font-mono);font-size:11px;font-weight:700;padding:1px 6px;border-radius:5px;background:rgba(255,255,255,0.08);margin-right:6px;}
+  .banner code{font-family:var(--font-mono);background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px;font-size:12px;color:var(--ink);}
 
   /* ---------- KPI ROW ---------- */
   .kpi-grid{
@@ -205,79 +337,111 @@
     margin-bottom:22px;
   }
   .kpi-card{
-    background:var(--surface);
+    background:
+      linear-gradient(180deg, rgba(32,24,17,.98), rgba(17,13,10,.98)),
+      radial-gradient(circle at 100% 0%, rgba(244,180,58,.16), transparent 40%);
     border:1px solid var(--line);
     border-radius:var(--radius);
     padding:16px 18px;
     box-shadow:var(--shadow);
+    position:relative;
+    overflow:hidden;
   }
-  .kpi-card .label{font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;}
-  .kpi-card .value{font-family:var(--font-mono);font-size:24px;font-weight:600;letter-spacing:-0.01em;}
-  .kpi-card .delta{margin-top:6px;font-size:12px;font-weight:600;font-family:var(--font-mono);}
-  .delta.up{color:var(--primary);}
+  .kpi-card::before{
+    content:"";position:absolute;left:0;right:0;top:0;height:3px;
+    background:linear-gradient(90deg,var(--bad),var(--primary));
+  }
+  .kpi-card .label{font-size:10.5px;color:var(--muted);font-weight:900;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
+  .kpi-card .value{font-family:var(--font-mono);font-size:23px;font-weight:700;letter-spacing:-.02em;color:#FFF7E8;}
+  .kpi-card .delta{margin-top:6px;font-size:12px;font-weight:700;font-family:var(--font-mono);}
+  .delta.up{color:var(--good);}
   .delta.down{color:var(--bad);}
   .delta.flat{color:var(--muted);}
 
   /* ---------- CARDS / LAYOUT ---------- */
   .grid-2{display:grid;grid-template-columns:1.55fr 1fr;gap:16px;margin-bottom:16px;align-items:start;}
   .card{
-    background:var(--surface);
+    background:linear-gradient(180deg, rgba(32,24,17,.97), rgba(17,13,10,.97));
     border:1px solid var(--line);
     border-radius:var(--radius);
     box-shadow:var(--shadow);
     padding:20px 22px;
+    position:relative;
+    overflow:hidden;
   }
+  .card::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    background:linear-gradient(135deg, rgba(244,180,58,.08), transparent 22%, transparent 72%, rgba(232,67,46,.045));
+  }
+  .card > *{position:relative;z-index:1;}
   .card h2{
     font-family:var(--font-display);
-    font-size:15px;
-    font-weight:600;
+    font-size:26px;
+    line-height:.95;
+    font-weight:400;
+    letter-spacing:.04em;
+    text-transform:uppercase;
     margin:0 0 16px;
     display:flex;align-items:center;justify-content:space-between;
+    color:var(--ink);
   }
-  .card h2 .sub{font-family:var(--font-body);font-weight:500;font-size:11.5px;color:var(--muted);text-transform:none;}
+  .card h2 .sub{font-family:var(--font-body);font-weight:700;font-size:11.5px;color:var(--muted);text-transform:none;letter-spacing:0;}
 
   table{width:100%;border-collapse:collapse;font-size:13px;}
   th{
-    text-align:right;font-size:10.5px;text-transform:uppercase;letter-spacing:0.03em;
-    color:var(--muted);font-weight:600;padding:0 8px 8px;border-bottom:1px solid var(--line);
+    text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--primary);font-weight:900;padding:0 8px 9px;border-bottom:1px solid var(--line);
   }
   th:first-child, td:first-child{text-align:left;}
-  td{padding:9px 8px;text-align:right;font-family:var(--font-mono);border-bottom:1px solid var(--line);}
+  td{padding:10px 8px;text-align:right;font-family:var(--font-mono);border-bottom:1px solid rgba(255,244,223,.09);color:#F8E8CD;}
   tr:last-child td{border-bottom:none;}
-  tr.total-row td{font-weight:700;border-top:2px solid var(--ink);border-bottom:none;padding-top:11px;}
-  .chan-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;}
-  td.chan-name{font-family:var(--font-body);font-weight:600;display:flex;align-items:center;}
+  tr:hover td{background:rgba(255,244,223,.035);}
+  tr.total-row td{font-weight:800;border-top:2px solid var(--primary);border-bottom:none;padding-top:12px;color:var(--ink);}
+  .chan-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;box-shadow:0 0 12px currentColor;}
+  td.chan-name{font-family:var(--font-body);font-weight:900;display:flex;align-items:center;color:var(--ink);}
 
-  .top-channel-card{display:flex;flex-direction:column;gap:6px;}
-  .top-channel-card .crown{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--warm);}
-  .top-channel-card .name{font-family:var(--font-display);font-size:22px;font-weight:700;}
-  .top-channel-card .stat{color:var(--muted);font-size:13px;}
+  .top-channel-card{display:flex;flex-direction:column;gap:7px;min-height:185px;}
+  .top-channel-card .crown{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:var(--primary);font-family:var(--font-mono);}
+  .top-channel-card .name{font-family:var(--font-display);font-size:58px;line-height:.9;font-weight:400;text-transform:uppercase;text-shadow:2px 2px 0 #000, 4px 4px 0 rgba(232,67,46,.35);}
+  .top-channel-card .stat{color:var(--muted);font-size:13px;font-weight:700;}
 
   .op-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
-  .op-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px 18px;box-shadow:var(--shadow);}
-  .op-card .label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;}
-  .op-card .value{font-family:var(--font-mono);font-size:19px;font-weight:600;}
+  .op-card{background:linear-gradient(180deg, rgba(32,24,17,.98), rgba(17,13,10,.98));border:1px solid var(--line);border-radius:var(--radius);padding:15px 18px;box-shadow:var(--shadow);}
+  .op-card .label{font-size:10.5px;color:var(--muted);font-weight:900;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+  .op-card .value{font-family:var(--font-mono);font-size:19px;font-weight:800;color:var(--ink);}
   .op-card .value.neg{color:var(--bad);}
 
   .chart-wrap{position:relative;height:220px;}
   .chart-wrap.tall{height:280px;}
+  canvas{filter:drop-shadow(0 0 0 transparent);}
 
-  footer{margin-top:8px;color:var(--muted);font-size:12px;line-height:1.6;}
+  footer{margin-top:8px;color:var(--muted);font-size:12px;line-height:1.6;font-weight:600;}
+  footer b{color:var(--primary);}
   footer details{margin-top:10px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px;}
-  footer summary{cursor:pointer;font-weight:600;color:var(--ink);}
+  footer summary{cursor:pointer;font-weight:800;color:var(--ink);}
   footer .range-summary{margin-top:6px;font-family:var(--font-mono);font-size:11.5px;}
 
   .empty-state{color:var(--muted);font-size:13px;padding:20px 0;text-align:center;}
 
   @media (max-width: 980px){
     .kpi-grid{grid-template-columns:repeat(2,1fr);}
-    .grid-2{grid-template-columns:1fr;}
+    .grid-2{grid-template-columns:1fr !important;}
     .op-grid{grid-template-columns:repeat(2,1fr);}
+    .header-right{align-items:flex-start;}
   }
   @media (max-width: 560px){
+    .shell{padding:18px 14px 48px;}
     .kpi-grid{grid-template-columns:1fr;}
     .op-grid{grid-template-columns:1fr;}
-    header.top{flex-direction:column;}
+    header.top{flex-direction:column;padding:18px;}
+    header.top::after{display:none;}
+    .brand h1{font-size:58px;}
+    .card{padding:17px 15px;}
+    .card h2{font-size:22px;}
+    table{font-size:12px;}
   }
 </style>
 </head>
@@ -286,12 +450,21 @@
 
   <header class="top">
     <div class="brand">
+      <div class="eyebrow">ATL sales command center</div>
       <h1>THE BANDO</h1>
-      <p>Weekly Sales Dashboard · Square · DoorDash · UberEats · Wix</p>
+      <p>Weekly revenue control room · Square · DoorDash · UberEats · Wix</p>
+      <div class="brand-stamps">
+        <span>Feed the people</span>
+        <span>Fuel the culture</span>
+        <span>Empower the community</span>
+      </div>
     </div>
-    <div class="live-chip">
-      <span class="live-dot" id="liveDot"></span>
-      <span id="liveText">Connecting…</span>
+    <div class="header-right">
+      <div class="live-chip">
+        <span class="live-dot" id="liveDot"></span>
+        <span id="liveText">Connecting…</span>
+      </div>
+      <div class="mini-plate">Wed–Sun reporting<br>Executive sales view</div>
     </div>
   </header>
 
@@ -387,16 +560,7 @@
   <div class="op-grid" id="opGrid"></div>
 
   <footer>
-    <div>Source: Google Sheet, tab <b>Data</b> · auto-refreshes every 60s and on tab focus.</div>
-    <details>
-      <summary>How to add a new week</summary>
-      <div style="margin-top:8px;">
-        Go to the <b>Data</b> tab of the Google Sheet → add 4 new rows at the bottom (one per channel) →
-        use the same Week Label text for all 4 (e.g. "Jul 8-12, 2026") → fill in Orders, Gross Sales, Discount, Tax, Tips, Net Payout →
-        leave a cell as 0 if unknown, and use Notes for anything unusual. This dashboard updates automatically — no formulas to touch here.
-      </div>
-      <div class="range-summary" id="dataRangeSummary"></div>
-    </details>
+    <div>BANDO DATA ROOM · Source: Google Sheet, tab <b>Data</b> · auto-refreshes every 60s and on tab focus.</div>
   </footer>
 
 </div>
@@ -412,7 +576,7 @@ const CONFIG = {
 };
 
 const CHANNEL_COLORS = {
-  'Square':'#3E6C8C', 'DoorDash':'#C1432A', 'UberEats':'#2F9E6E', 'Wix':'#7C5CBF'
+  'Square':'#5D86B3', 'DoorDash':'#F04A31', 'UberEats':'#39C978', 'Wix':'#B592FF'
 };
 const CHANNEL_ORDER = ['Square','DoorDash','UberEats','Wix'];
 
@@ -428,7 +592,7 @@ let explorerMetric = 'gross';
 let lastCsvHash = null;
 let pollTimer = null;
 
-const FALLBACK_PALETTE = ['#3E6C8C','#C1432A','#2F9E6E','#7C5CBF','#B98A2F','#4E7C6B','#9C5B8F','#5C7A99'];
+const FALLBACK_PALETTE = ['#F4B43A','#E8432E','#39C978','#B592FF','#5D86B3','#D77B32','#9D6A4A','#FFF4DF'];
 function colorForChannel(name, idx){
   return CHANNEL_COLORS[name] || FALLBACK_PALETTE[idx % FALLBACK_PALETTE.length];
 }
@@ -649,10 +813,6 @@ function buildWeeks(){
     document.getElementById('rangeEnd').value = ymd(rangeEnd);
   }
 
-  const first = WEEKS[0], last = WEEKS[WEEKS.length-1];
-  document.getElementById('dataRangeSummary').textContent = WEEKS.length
-    ? `Data on file: ${fmtDateShort(first.start)} → ${fmtDateShort(last.end)} (${WEEKS.length} weeks)`
-    : '';
 }
 
 /* ======================= AGGREGATION ======================= */
@@ -847,16 +1007,6 @@ function renderBanner(agg){
         </div>
       </div>`;
   }
-  if (agg.notes.length){
-    const items = agg.notes.map(n => `<li><span class="chan-tag">${n.channel}</span>${n.note}</li>`).join('');
-    html += `
-      <div class="banner warn">
-        <div style="width:100%;">
-          <b>Data quality flags for this view</b>
-          <ul>${items}</ul>
-        </div>
-      </div>`;
-  }
   document.getElementById('bannerZone').innerHTML = html;
 }
 
@@ -924,7 +1074,7 @@ function renderBar(agg){
       labels,
       datasets:[
         {type:'bar', label:'Gross Sales', data, backgroundColor:colors, borderRadius:6, maxBarThickness:46, yAxisID:'y'},
-        {type:'line', label:'Cumulative %', data:cumPct, yAxisID:'y1', borderColor:'#E3A038', backgroundColor:'#E3A038', borderWidth:2.5, pointRadius:4, pointBackgroundColor:'#E3A038', tension:0.25}
+        {type:'line', label:'Cumulative %', data:cumPct, yAxisID:'y1', borderColor:'#F4B43A', backgroundColor:'#F4B43A', borderWidth:2.5, pointRadius:4, pointBackgroundColor:'#F4B43A', tension:0.25}
       ]
     },
     options:{
@@ -933,7 +1083,7 @@ function renderBar(agg){
         tooltip:{callbacks:{label: c => c.dataset.label==='Cumulative %' ? `Cumulative: ${c.raw.toFixed(1)}%` : fmtUSD(c.raw)}}
       },
       scales:{
-        y:{beginAtZero:true, ticks:{callback:v=>fmtUSD0(v), font:{family:'IBM Plex Mono', size:10.5}}, grid:{color:'#E4E8E3'}},
+        y:{beginAtZero:true, ticks:{callback:v=>fmtUSD0(v), font:{family:'IBM Plex Mono', size:10.5}}, grid:{color:'rgba(255,244,223,0.10)'}},
         y1:{position:'right', min:0, max:100, ticks:{callback:v=>v+'%', font:{family:'IBM Plex Mono', size:10.5}}, grid:{drawOnChartArea:false}},
         x:{ticks:{font:{family:'Inter', size:12, weight:600}}, grid:{display:false}}
       }
@@ -962,10 +1112,10 @@ function renderWaterfall(agg){
   const labels = steps.map(s=>s.label);
   const data = steps.map(s=>s.range);
   const colors = steps.map(s => {
-    if (s.kind==='total') return '#1F4B43';
-    if (s.kind==='subtotal') return '#8FAAA3';
-    if (s.kind==='up') return '#2F9E6E';
-    return '#C1432A';
+    if (s.kind==='total') return '#F4B43A';
+    if (s.kind==='subtotal') return '#9D6A4A';
+    if (s.kind==='up') return '#39C978';
+    return '#F04A31';
   });
 
   if (waterfallChart) waterfallChart.destroy();
@@ -980,7 +1130,7 @@ function renderWaterfall(agg){
         }}}
       },
       scales:{
-        y:{ticks:{callback:v=>fmtUSD0(v), font:{family:'IBM Plex Mono', size:10.5}}, grid:{color:'#E4E8E3'}},
+        y:{ticks:{callback:v=>fmtUSD0(v), font:{family:'IBM Plex Mono', size:10.5}}, grid:{color:'rgba(255,244,223,0.10)'}},
         x:{ticks:{font:{family:'Inter', size:11.5, weight:600}}, grid:{display:false}}
       }
     }
@@ -1015,7 +1165,7 @@ function renderStackedMix(){
         tooltip:{callbacks:{label: c => `${c.dataset.label}: ${fmtUSD(c.raw)}`}}
       },
       scales:{
-        y:{stacked:true, beginAtZero:true, ticks:{callback:v=>fmtUSD0(v), font:{family:'IBM Plex Mono', size:10.5}}, grid:{color:'#E4E8E3'}},
+        y:{stacked:true, beginAtZero:true, ticks:{callback:v=>fmtUSD0(v), font:{family:'IBM Plex Mono', size:10.5}}, grid:{color:'rgba(255,244,223,0.10)'}},
         x:{stacked:true, ticks:{font:{family:'Inter', size:11}}, grid:{display:false}}
       }
     }
@@ -1063,7 +1213,7 @@ function renderMultiTrend(){
         tooltip:{callbacks:{label: c => `${c.dataset.label}: ${meta.fmt(c.raw)}`}}
       },
       scales:{
-        y:{beginAtZero:true, ticks:{callback:v=>meta.fmt(v), font:{family:'IBM Plex Mono', size:10.5}}, grid:{color:'#E4E8E3'}},
+        y:{beginAtZero:true, ticks:{callback:v=>meta.fmt(v), font:{family:'IBM Plex Mono', size:10.5}}, grid:{color:'rgba(255,244,223,0.10)'}},
         x:{ticks:{font:{family:'Inter', size:11}}, grid:{display:false}}
       }
     }
@@ -1089,7 +1239,7 @@ function renderTrend(){
   const grossData = WEEKS.map(w => aggregateRows(w.rows).totals.gross);
   const ordersData = WEEKS.map(w => aggregateRows(w.rows).totals.orders);
   const highlightIdx = mode === 'week' ? WEEKS.findIndex(w=>w.label===selectedWeekLabel) : -1;
-  const pointColors = WEEKS.map((w,i) => i === highlightIdx ? '#E3A038' : '#1F4B43');
+  const pointColors = WEEKS.map((w,i) => i === highlightIdx ? '#F4B43A' : '#F4B43A');
   const pointRadii = WEEKS.map((w,i) => i === highlightIdx ? 6 : 3);
 
   if (trendChart) trendChart.destroy();
@@ -1099,12 +1249,12 @@ function renderTrend(){
       datasets:[
         {
           type:'line', label:'Gross Sales', data:grossData, yAxisID:'y',
-          borderColor:'#1F4B43', backgroundColor:'rgba(31,75,67,0.08)', fill:true, tension:0.3,
+          borderColor:'#F4B43A', backgroundColor:'rgba(244,180,58,0.09)', fill:true, tension:0.3,
           pointBackgroundColor:pointColors, pointRadius:pointRadii, pointHoverRadius:7, borderWidth:2.5
         },
         {
           type:'bar', label:'Orders', data:ordersData, yAxisID:'y1',
-          backgroundColor:'rgba(124,92,191,0.35)', borderRadius:5, maxBarThickness:34
+          backgroundColor:'rgba(232,67,46,0.34)', borderRadius:5, maxBarThickness:34
         }
       ]
     },
@@ -1115,7 +1265,7 @@ function renderTrend(){
         tooltip:{callbacks:{ label: c => c.dataset.label === 'Gross Sales' ? `Gross: ${fmtUSD(c.raw)}` : `Orders: ${fmtInt(c.raw)}` }}
       },
       scales:{
-        y:{position:'left', ticks:{callback:v=>fmtUSD0(v), font:{family:'IBM Plex Mono', size:10.5}}, grid:{color:'#E4E8E3'}},
+        y:{position:'left', ticks:{callback:v=>fmtUSD0(v), font:{family:'IBM Plex Mono', size:10.5}}, grid:{color:'rgba(255,244,223,0.10)'}},
         y1:{position:'right', ticks:{callback:v=>fmtInt(v), font:{family:'IBM Plex Mono', size:10.5}}, grid:{drawOnChartArea:false}},
         x:{ticks:{font:{family:'Inter', size:11}}, grid:{display:false}}
       }
