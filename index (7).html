@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Bando — Weekly Sales Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root{
+    --ink:#16231F;
+    --paper:#EFF2EE;
+    --surface:#FFFFFF;
+    --line:#DBE1DB;
+    --muted:#5B655F;
+    --primary:#1F4B43;
+    --primary-soft:#E4EDEA;
+    --warm:#E3A038;
+    --warm-soft:#FBEDD4;
+    --bad:#B3432E;
+    --bad-soft:#F7E4DF;
+
+    --square:#3E6C8C;
+    --doordash:#C1432A;
+    --ubereats:#2F9E6E;
+    --wix:#7C5CBF;
+
+    --radius:14px;
+    --shadow:0 1px 2px rgba(22,35,31,0.06), 0 8px 24px -12px rgba(22,35,31,0.18);
+    --font-display:'Space Grotesk', sans-serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'IBM Plex Mono', monospace;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;}
+
+  .shell{max-width:1360px;margin:0 auto;padding:28px 24px 64px;}
+
+  /* ---------- HEADER ---------- */
+  header.top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:24px;
+    flex-wrap:wrap;
+    margin-bottom:18px;
+  }
+  .brand h1{
+    font-family:var(--font-display);
+    font-size:28px;
+    font-weight:700;
+    letter-spacing:0.01em;
+    margin:0 0 4px;
+  }
+  .brand p{
+    margin:0;
+    color:var(--muted);
+    font-size:13.5px;
+  }
+
+  .live-chip{
+    display:inline-flex;align-items:center;gap:7px;
+    font-family:var(--font-mono);
+    font-size:11.5px;
+    color:var(--muted);
+    background:var(--surface);
+    border:1px solid var(--line);
+    padding:6px 12px;
+    border-radius:999px;
+    white-space:nowrap;
+  }
+  .live-dot{width:7px;height:7px;border-radius:50%;background:var(--primary);animation:pulse 2.2s infinite;flex-shrink:0;}
+  .live-dot.stale{background:var(--warm);animation:none;}
+  .live-dot.error{background:var(--bad);animation:none;}
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(31,75,67,0.35);}
+    70%{box-shadow:0 0 0 6px rgba(31,75,67,0);}
+    100%{box-shadow:0 0 0 0 rgba(31,75,67,0);}
+  }
+
+  /* week rhythm strip - signature element */
+  .rhythm{display:flex;gap:4px;margin:14px 0 22px;}
+  .rhythm .seg{
+    flex:1;
+    height:6px;
+    border-radius:4px;
+    background:var(--line);
+    position:relative;
+  }
+  .rhythm .seg.active{background:var(--primary);}
+  .rhythm-wrap{display:flex;flex-direction:column;gap:6px;}
+  .rhythm-labels{display:flex;gap:4px;font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:0.06em;}
+  .rhythm-labels span{flex:1;text-align:center;}
+
+  /* ---------- CONTROLS ---------- */
+  .controls{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    margin-bottom:22px;
+    box-shadow:var(--shadow);
+  }
+  .seg-toggle{
+    display:flex;background:var(--paper);border-radius:9px;padding:3px;border:1px solid var(--line);
+  }
+  .seg-toggle button{
+    border:none;background:transparent;padding:7px 14px;border-radius:7px;
+    font-family:var(--font-body);font-weight:600;font-size:13px;color:var(--muted);cursor:pointer;
+  }
+  .seg-toggle button.active{background:var(--primary);color:#fff;}
+  #metricToggle{padding:2px;}
+  #metricToggle button{padding:5px 11px;font-size:11.5px;text-transform:none;}
+  .card h2{flex-wrap:wrap;row-gap:8px;}
+
+  select, input[type=date]{
+    font-family:var(--font-body);
+    font-size:13.5px;
+    font-weight:500;
+    color:var(--ink);
+    border:1px solid var(--line);
+    background:var(--surface);
+    padding:8px 12px;
+    border-radius:8px;
+  }
+  select:focus, input:focus, button:focus{outline:2px solid var(--primary);outline-offset:1px;}
+
+  .control-group{display:flex;align-items:center;gap:8px;}
+  .control-group label{font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.04em;}
+
+  .spacer{flex:1;}
+
+  button.icon-btn{
+    display:inline-flex;align-items:center;gap:6px;
+    border:1px solid var(--line);background:var(--surface);
+    padding:8px 13px;border-radius:8px;font-family:var(--font-body);font-weight:600;font-size:13px;
+    color:var(--primary);cursor:pointer;
+  }
+  button.icon-btn:hover{background:var(--primary-soft);}
+  button.icon-btn svg{width:14px;height:14px;}
+  .spin{animation:spin 0.8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ---------- BANNERS ---------- */
+  .banner{
+    display:flex;gap:12px;align-items:flex-start;
+    border-radius:var(--radius);
+    padding:14px 16px;
+    margin-bottom:22px;
+    font-size:13.5px;
+    line-height:1.5;
+  }
+  .banner.warn{background:var(--warm-soft);border:1px solid #EFCE94;}
+  .banner.error{background:var(--bad-soft);border:1px solid #E3B2A5;}
+  .banner b{display:block;margin-bottom:4px;font-family:var(--font-display);font-size:13.5px;}
+  .banner ul{margin:6px 0 0;padding-left:18px;}
+  .banner li{margin-bottom:3px;}
+  .banner .chan-tag{font-family:var(--font-mono);font-size:11px;font-weight:600;padding:1px 6px;border-radius:5px;background:rgba(0,0,0,0.06);margin-right:6px;}
+  .banner code{font-family:var(--font-mono);background:rgba(0,0,0,0.07);padding:1px 5px;border-radius:4px;font-size:12px;}
+
+  /* ---------- KPI ROW ---------- */
+  .kpi-grid{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:14px;
+    margin-bottom:22px;
+  }
+  .kpi-card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px 18px;
+    box-shadow:var(--shadow);
+  }
+  .kpi-card .label{font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;}
+  .kpi-card .value{font-family:var(--font-mono);font-size:24px;font-weight:600;letter-spacing:-0.01em;}
+  .kpi-card .delta{margin-top:6px;font-size:12px;font-weight:600;font-family:var(--font-mono);}
+  .delta.up{color:var(--primary);}
+  .delta.down{color:var(--bad);}
+  .delta.flat{color:var(--muted);}
+
+  /* ---------- CARDS / LAYOUT ---------- */
+  .grid-2{display:grid;grid-template-columns:1.55fr 1fr;gap:16px;margin-bottom:16px;align-items:start;}
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:20px 22px;
+  }
+  .card h2{
+    font-family:var(--font-display);
+    font-size:15px;
+    font-weight:600;
+    margin:0 0 16px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .card h2 .sub{font-family:var(--font-body);font-weight:500;font-size:11.5px;color:var(--muted);text-transform:none;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{
+    text-align:right;font-size:10.5px;text-transform:uppercase;letter-spacing:0.03em;
+    color:var(--muted);font-weight:600;padding:0 8px 8px;border-bottom:1px solid var(--line);
+  }
+  th:first-child, td:first-child{text-align:left;}
+  td{padding:9px 8px;text-align:right;font-family:var(--font-mono);border-bottom:1px solid var(--line);}
+  tr:last-child td{border-bottom:none;}
+  tr.total-row td{font-weight:700;border-top:2px solid var(--ink);border-bottom:none;padding-top:11px;}
+  .chan-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;}
+  td.chan-name{font-family:var(--font-body);font-weight:600;display:flex;align-items:center;}
+
+  .top-channel-card{display:flex;flex-direction:column;gap:6px;}
+  .top-channel-card .crown{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--warm);}
+  .top-channel-card .name{font-family:var(--font-display);font-size:22px;font-weight:700;}
+  .top-channel-card .stat{color:var(--muted);font-size:13px;}
+
+  .op-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+  .op-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px 18px;box-shadow:var(--shadow);}
+  .op-card .label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;}
+  .op-card .value{font-family:var(--font-mono);font-size:19px;font-weight:600;}
+  .op-card .value.neg{color:var(--bad);}
+
+  .chart-wrap{position:relative;height:220px;}
+  .chart-wrap.tall{height:280px;}
+
+  footer{margin-top:8px;color:var(--muted);font-size:12px;line-height:1.6;}
+  footer details{margin-top:10px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px;}
+  footer summary{cursor:pointer;font-weight:600;color:var(--ink);}
+  footer .range-summary{margin-top:6px;font-family:var(--font-mono);font-size:11.5px;}
+
+  .empty-state{color:var(--muted);font-size:13px;padding:20px 0;text-align:center;}
+
+  @media (max-width: 980px){
+    .kpi-grid{grid-template-columns:repeat(2,1fr);}
+    .grid-2{grid-template-columns:1fr;}
+    .op-grid{grid-template-columns:repeat(2,1fr);}
+  }
+  @media (max-width: 560px){
+    .kpi-grid{grid-template-columns:1fr;}
+    .op-grid{grid-template-columns:1fr;}
+    header.top{flex-direction:column;}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="top">
+    <div class="brand">
+      <h1>THE BANDO</h1>
+      <p>Weekly Sales Dashboard · Square · DoorDash · UberEats · Wix</p>
+    </div>
+    <div class="live-chip">
+      <span class="live-dot" id="liveDot"></span>
+      <span id="liveText">Connecting…</span>
+    </div>
+  </header>
+
+  <div class="rhythm-wrap">
+    <div class="rhythm" id="rhythmBar">
+      <div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div>
+    </div>
+    <div class="rhythm-labels"><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+  </div>
+
+  <div class="controls">
+    <div class="seg-toggle" id="modeToggle">
+      <button data-mode="week" class="active">Select week</button>
+      <button data-mode="range">Date range</button>
+    </div>
+
+    <div class="control-group" id="weekPickerGroup">
+      <label>Week</label>
+      <select id="weekSelect"></select>
+    </div>
+
+    <div class="control-group" id="rangePickerGroup" style="display:none;">
+      <label>From</label>
+      <input type="date" id="rangeStart">
+      <label>To</label>
+      <input type="date" id="rangeEnd">
+    </div>
+
+    <div class="spacer"></div>
+
+    <button class="icon-btn" id="refreshBtn">
+      <svg id="refreshIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5"/></svg>
+      Refresh
+    </button>
+  </div>
+
+  <div id="bannerZone"></div>
+
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h2>Sales by channel <span class="sub" id="channelScopeLabel"></span></h2>
+      <table id="channelTable"><thead></thead><tbody></tbody></table>
+    </div>
+    <div class="card">
+      <h2>Share of gross sales</h2>
+      <div class="chart-wrap tall"><canvas id="donutChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="grid-template-columns:1fr 1fr;">
+    <div class="card">
+      <h2>Channel contribution <span class="sub">Ranked · cumulative % (Pareto)</span></h2>
+      <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+    </div>
+    <div class="card top-channel-card">
+      <h2>Top performing channel</h2>
+      <div class="crown" id="topChannelCrown">—</div>
+      <div class="name" id="topChannelName">—</div>
+      <div class="stat" id="topChannelStat">—</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px;">
+    <h2>Money flow <span class="sub" id="waterfallScopeLabel">Gross Sales → Net Payout, current scope</span></h2>
+    <div class="chart-wrap"><canvas id="waterfallChart"></canvas></div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px;">
+    <h2>Weekly channel mix <span class="sub">Gross sales, stacked by channel</span></h2>
+    <div class="chart-wrap tall"><canvas id="stackedChart"></canvas></div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px;">
+    <h2>Trend across all weeks <span class="sub">Gross sales &amp; orders, full history</span></h2>
+    <div class="chart-wrap tall"><canvas id="trendChart"></canvas></div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px;">
+    <h2 style="flex-wrap:wrap;gap:10px;">
+      <span>Channel trend explorer</span>
+      <span class="seg-toggle" id="metricToggle" style="font-size:12px;">
+        <button data-metric="gross" class="active">Gross</button>
+        <button data-metric="orders">Orders</button>
+        <button data-metric="aov">AOV</button>
+        <button data-metric="netPayout">Net Payout</button>
+      </span>
+    </h2>
+    <div class="chart-wrap tall"><canvas id="multiTrendChart"></canvas></div>
+  </div>
+
+  <div class="op-grid" id="opGrid"></div>
+
+  <footer>
+    <div>Source: Google Sheet, tab <b>Data</b> · auto-refreshes every 60s and on tab focus.</div>
+    <details>
+      <summary>How to add a new week</summary>
+      <div style="margin-top:8px;">
+        Go to the <b>Data</b> tab of the Google Sheet → add 4 new rows at the bottom (one per channel) →
+        use the same Week Label text for all 4 (e.g. "Jul 8-12, 2026") → fill in Orders, Gross Sales, Discount, Tax, Tips, Net Payout →
+        leave a cell as 0 if unknown, and use Notes for anything unusual. This dashboard updates automatically — no formulas to touch here.
+      </div>
+      <div class="range-summary" id="dataRangeSummary"></div>
+    </details>
+  </footer>
+
+</div>
+
+<script>
+/* ======================= CONFIG ======================= */
+const CONFIG = {
+  // Paste the URL you get from Google Sheets: File > Share > Publish to the web
+  // (publish the "Data" sheet only, format = CSV). See README for exact steps.
+  PUBLISHED_CSV_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRbe6U7W2LGC-bPwHptTzwf71-5bGs4RE56hKHyTGIYVPBjSv4VnMHiCogP2WAyzQ/pub?gid=1304035735&single=true&output=csv',
+  DATA_TAB: 'Data',
+  REFRESH_MS: 60000,
+};
+
+const CHANNEL_COLORS = {
+  'Square':'#3E6C8C', 'DoorDash':'#C1432A', 'UberEats':'#2F9E6E', 'Wix':'#7C5CBF'
+};
+const CHANNEL_ORDER = ['Square','DoorDash','UberEats','Wix'];
+
+/* ======================= STATE ======================= */
+let RAW_ROWS = [];          // parsed + typed rows
+let WEEKS = [];              // [{label, start, end, rows:[...]}] sorted by start asc
+let mode = 'week';           // 'week' | 'range'
+let selectedWeekLabel = null;
+let rangeStart = null;
+let rangeEnd = null;
+let donutChart, barChart, trendChart, waterfallChart, stackedChart, multiTrendChart;
+let explorerMetric = 'gross';
+let lastCsvHash = null;
+let pollTimer = null;
+
+const FALLBACK_PALETTE = ['#3E6C8C','#C1432A','#2F9E6E','#7C5CBF','#B98A2F','#4E7C6B','#9C5B8F','#5C7A99'];
+function colorForChannel(name, idx){
+  return CHANNEL_COLORS[name] || FALLBACK_PALETTE[idx % FALLBACK_PALETTE.length];
+}
+function getAllChannels(){
+  const found = new Set();
+  RAW_ROWS.forEach(r => found.add(r.channel));
+  const known = CHANNEL_ORDER.filter(c => found.has(c));
+  const extra = [...found].filter(c => !CHANNEL_ORDER.includes(c)).sort();
+  return [...known, ...extra];
+}
+
+const fmtUSD = n => '$' + Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtUSD0 = n => '$' + Number(n||0).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
+const fmtInt = n => Number(n||0).toLocaleString('en-US');
+const fmtPct = n => (Number(n||0)*100).toFixed(1) + '%';
+
+/* ======================= PARSE HELPERS ======================= */
+function parseNumber(v){
+  if (v === null || v === undefined) return 0;
+  if (typeof v === 'number') return v;
+  let s = String(v).trim();
+  if (s === '' || s === '-') return 0;
+  let neg = false;
+  if (/^\(.*\)$/.test(s)){ neg = true; s = s.slice(1,-1); }
+  s = s.replace(/[$,%\s]/g,'');
+  let n = parseFloat(s);
+  if (isNaN(n)) return 0;
+  return neg ? -n : n;
+}
+
+function parseDate(v){
+  if (v === null || v === undefined || v === '') return null;
+  if (typeof v === 'number'){
+    // Excel serial date
+    return new Date((v - 25569) * 86400000);
+  }
+  let s = String(v).trim();
+  if (/^\d+(\.\d+)?$/.test(s)){
+    return new Date((parseFloat(s) - 25569) * 86400000);
+  }
+  let d = new Date(s);
+  if (!isNaN(d.getTime())) return d;
+  return null;
+}
+
+function ymd(d){
+  if (!d) return '';
+  return d.toISOString().slice(0,10);
+}
+
+function fmtDateShort(d){
+  if (!d) return '—';
+  return d.toLocaleDateString('en-US',{month:'short', day:'numeric', year:'numeric'});
+}
+
+/* ======================= DATA LOAD ======================= */
+const FALLBACK_ROWS = [["Week Start", "Week End", "Week Label", "Channel", "Orders", "Gross Sales", "Discount", "Tax", "Tips", "Net Payout", "Notes"], ["2026-06-03", "2026-06-07", "Jun 3-7, 2026", "Square", 1643, 38405.84, 5, 3108.49, 784.24, 37159.32, ""], ["2026-06-03", "2026-06-07", "Jun 3-7, 2026", "DoorDash", 141, 4623.9, 0, 0, 0, 1713.12, "Discount/Tax not available at order-level for DoorDash (only via payout-date summary). Net Payout is approx, matched to nearest payout cycle, not the exact order week."], ["2026-06-03", "2026-06-07", "Jun 3-7, 2026", "UberEats", 61, 2568.14, 1107.51, 202.25, 0, 1127.15, ""], ["2026-06-03", "2026-06-07", "Jun 3-7, 2026", "Wix", 72, 1937.57, 0, 172.32, 0, 2013.51, "Tips/Service Fee not available at daily granularity for Wix yet."], ["2026-06-10", "2026-06-14", "Jun 10-14, 2026", "Square", 1436, 38040.24, 20, 3070.81, 870.96, 36910.89, ""], ["2026-06-10", "2026-06-14", "Jun 10-14, 2026", "DoorDash", 129, 4237.15, 0, 0, 0, 1537.39, "Discount/Tax not available at order-level for DoorDash. Net Payout is approx (nearest payout cycle)."], ["2026-06-10", "2026-06-14", "Jun 10-14, 2026", "UberEats", 67, 2748.38, 1148.43, 203.15, 0, 1184.6, ""], ["2026-06-10", "2026-06-14", "Jun 10-14, 2026", "Wix", 98, 3424.51, 0, 304.57, 0, 3802.36, "Tips/Service Fee not available at daily granularity for Wix yet."], ["2026-06-17", "2026-06-21", "Jun 17-21, 2026", "Square", 1214, 28388.67, 10, 2276.11, 842.89, 27465.88, ""], ["2026-06-17", "2026-06-21", "Jun 17-21, 2026", "DoorDash", 115, 3696.15, 0, 0, 0, 1086.11, "Discount/Tax not available at order-level for DoorDash. Net Payout is approx (nearest payout cycle)."], ["2026-06-17", "2026-06-21", "Jun 17-21, 2026", "UberEats", 55, 2622.68, 1116.89, 202.64, 0, 1174.71, ""], ["2026-06-17", "2026-06-21", "Jun 17-21, 2026", "Wix", 95, 3022.16, 0, 268.77, 0, 3257.61, "Tips/Service Fee not available at daily granularity for Wix yet."], ["2026-06-24", "2026-06-28", "Jun 24-28, 2026", "Square", 1523, 36429.04, 5, 2949.91, 727.53, 35251.86, ""], ["2026-06-24", "2026-06-28", "Jun 24-28, 2026", "DoorDash", 91, 2778.29, 0, 0, 0, 834.89, "Discount/Tax not available at order-level for DoorDash. Net Payout is approx (nearest payout cycle)."], ["2026-06-24", "2026-06-28", "Jun 24-28, 2026", "UberEats", 59, 2801.58, 1108.57, 212.8, 0, 1204.75, ""], ["2026-06-24", "2026-06-28", "Jun 24-28, 2026", "Wix", 56, 1882.48, 0, 167.34, 0, 1965.25, "Sunday Jun 28 excluded: 5 accidental orders ($205.71 gross), refunded same day. Tips/Service Fee not available at daily granularity yet."], ["2026-07-01", "2026-07-05", "Jul 1-5, 2026", "Square", 1477, 37354.64, 5, 3016.4, 846.95, 36162.35, ""], ["2026-07-01", "2026-07-05", "Jul 1-5, 2026", "DoorDash", 71, 2547.22, 0, 0, 0, 0, "PENDING - DoorDash has not issued this week's payout report yet."], ["2026-07-01", "2026-07-05", "Jul 1-5, 2026", "UberEats", 64, 2597.85, 1124.63, 198.19, 0, 959.19, "Complete - full week of order data."], ["2026-07-01", "2026-07-05", "Jul 1-5, 2026", "Wix", 0, 0, 0, 0, 0, -78.28, "PENDING - most sales still in Wix reserve hold, not yet released. Don't trust as real week total."]];
+
+function idxOf(headers, name){
+  return headers.findIndex(h => String(h||'').trim().toLowerCase() === name.toLowerCase());
+}
+
+async function tryFetchText(url, label){
+  const res = await fetch(url, {cache:'no-store'});
+  if (!res.ok) throw new Error(label + ': HTTP ' + res.status);
+  const text = await res.text();
+  if (text.trim() === '' || /^<!DOCTYPE html/i.test(text.trim())){
+    throw new Error(label + ': got an empty or non-CSV response');
+  }
+  return text;
+}
+
+async function fetchCsvText(rawUrl){
+  const bust = '_t=' + Date.now();
+  const sep = rawUrl.includes('?') ? '&' : '?';
+  const attempts = [
+    {label:'direct', url: rawUrl + sep + bust},
+    {label:'relay:allorigins', url: 'https://api.allorigins.win/raw?url=' + encodeURIComponent(rawUrl) + '&' + bust},
+    {label:'relay:corsproxy', url: 'https://corsproxy.io/?url=' + encodeURIComponent(rawUrl + sep + bust)},
+    {label:'relay:codetabs', url: 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(rawUrl + sep + bust)},
+  ];
+
+  const errors = [];
+  for (const attempt of attempts){
+    try{
+      const text = await tryFetchText(attempt.url, attempt.label);
+      if (errors.length) console.warn('CSV load: earlier attempts failed:', errors.join(' | '), '— succeeded via', attempt.label);
+      return text;
+    }catch(e){
+      errors.push(attempt.label + ' failed (' + e.message + ')');
+    }
+  }
+  throw new Error('ALL_ATTEMPTS_FAILED: ' + errors.join(' | '));
+}
+
+function loadRowsFromTable(rows){
+  if (!rows.length) throw new Error('The published sheet returned no rows.');
+  const headers = rows[0];
+  const col = {
+    weekStart: idxOf(headers,'Week Start'),
+    weekEnd: idxOf(headers,'Week End'),
+    weekLabel: idxOf(headers,'Week Label'),
+    channel: idxOf(headers,'Channel'),
+    orders: idxOf(headers,'Orders'),
+    gross: idxOf(headers,'Gross Sales'),
+    discount: idxOf(headers,'Discount'),
+    tax: idxOf(headers,'Tax'),
+    tips: idxOf(headers,'Tips'),
+    netPayout: idxOf(headers,'Net Payout'),
+    notes: idxOf(headers,'Notes'),
+  };
+  const missing = Object.entries(col).filter(([k,v]) => v === -1).map(([k]) => k);
+  if (missing.length){
+    throw new Error('Missing expected column(s) in the published sheet: ' + missing.join(', ') + '. Make sure you published the "' + CONFIG.DATA_TAB + '" tab, not a different one.');
+  }
+
+  return rows.slice(1).map(r => ({
+    weekStart: parseDate(r[col.weekStart]),
+    weekEnd: parseDate(r[col.weekEnd]),
+    weekLabel: String(r[col.weekLabel] ?? '').trim(),
+    channel: String(r[col.channel] ?? '').trim(),
+    orders: parseNumber(r[col.orders]),
+    gross: parseNumber(r[col.gross]),
+    discount: parseNumber(r[col.discount]),
+    tax: parseNumber(r[col.tax]),
+    tips: parseNumber(r[col.tips]),
+    netPayout: parseNumber(r[col.netPayout]),
+    notes: String(r[col.notes] ?? '').trim(),
+  })).filter(r => r.weekLabel && r.channel);
+}
+
+async function fetchData(isBackground){
+  try{
+    setLiveState('loading');
+
+    if (!CONFIG.PUBLISHED_CSV_URL || CONFIG.PUBLISHED_CSV_URL === 'PASTE_YOUR_PUBLISHED_CSV_LINK_HERE'){
+      throw new Error('MISSING_URL');
+    }
+
+    const text = await fetchCsvText(CONFIG.PUBLISHED_CSV_URL);
+
+    const hash = text.length + '|' + text.slice(-160);
+    const changed = hash !== lastCsvHash;
+    lastCsvHash = hash;
+
+    const parsed = Papa.parse(text.trim(), {skipEmptyLines:true});
+    RAW_ROWS = loadRowsFromTable(parsed.data);
+
+    buildWeeks();
+    clearBanners();
+    setLiveState('ok');
+    renderAll();
+
+    if (changed && isBackground){
+      flashUpdated();
+    }
+  }catch(err){
+    console.error(err);
+
+    if (err.message === 'MISSING_URL'){
+      setLiveState('error');
+      showErrorBanner('No published sheet link set yet — paste your published CSV URL into <code>CONFIG.PUBLISHED_CSV_URL</code> near the top of the script.', true);
+      return;
+    }
+
+    // Live connection failed. Rather than show a blank dashboard, fall back to the
+    // last known real snapshot — but say so clearly, unlike a silent fallback.
+    try{
+      RAW_ROWS = loadRowsFromTable(FALLBACK_ROWS);
+      buildWeeks();
+      dataSourceState = 'fallback';
+      fallbackReason = err.message;
+      renderAll();
+      setLiveState('fallback');
+    }catch(fallbackErr){
+      console.error(fallbackErr);
+      setLiveState('error');
+      showErrorBanner(err.message, false);
+    }
+  }
+}
+
+function buildWeeks(){
+  const map = new Map();
+  RAW_ROWS.forEach(r => {
+    if (!map.has(r.weekLabel)){
+      map.set(r.weekLabel, {label:r.weekLabel, start:r.weekStart, end:r.weekEnd, rows:[]});
+    }
+    const w = map.get(r.weekLabel);
+    w.rows.push(r);
+    if (r.weekStart && (!w.start || r.weekStart < w.start)) w.start = r.weekStart;
+    if (r.weekEnd && (!w.end || r.weekEnd > w.end)) w.end = r.weekEnd;
+  });
+  WEEKS = Array.from(map.values()).sort((a,b) => (a.start||0) - (b.start||0));
+
+  // populate week select if needed
+  const sel = document.getElementById('weekSelect');
+  const prevSelection = selectedWeekLabel;
+  sel.innerHTML = '';
+  WEEKS.slice().reverse().forEach(w => {
+    const opt = document.createElement('option');
+    opt.value = w.label;
+    opt.textContent = w.label;
+    sel.appendChild(opt);
+  });
+  if (prevSelection && WEEKS.some(w => w.label === prevSelection)){
+    selectedWeekLabel = prevSelection;
+  } else {
+    selectedWeekLabel = WEEKS.length ? WEEKS[WEEKS.length-1].label : null;
+  }
+  sel.value = selectedWeekLabel;
+
+  // default range = full span, only if not already set by user
+  if (!rangeStart && !rangeEnd && WEEKS.length){
+    rangeStart = WEEKS[0].start;
+    rangeEnd = WEEKS[WEEKS.length-1].end;
+    document.getElementById('rangeStart').value = ymd(rangeStart);
+    document.getElementById('rangeEnd').value = ymd(rangeEnd);
+  }
+
+  const first = WEEKS[0], last = WEEKS[WEEKS.length-1];
+  document.getElementById('dataRangeSummary').textContent = WEEKS.length
+    ? `Data on file: ${fmtDateShort(first.start)} → ${fmtDateShort(last.end)} (${WEEKS.length} weeks)`
+    : '';
+}
+
+/* ======================= AGGREGATION ======================= */
+function aggregateRows(rows){
+  const byChannel = {};
+  CHANNEL_ORDER.forEach(c => byChannel[c] = {channel:c, orders:0, gross:0, discount:0, tax:0, tips:0, netPayout:0, netChannelRevenue:0});
+
+  rows.forEach(r => {
+    if (!byChannel[r.channel]) byChannel[r.channel] = {channel:r.channel, orders:0, gross:0, discount:0, tax:0, tips:0, netPayout:0, netChannelRevenue:0};
+    const b = byChannel[r.channel];
+    b.orders += r.orders;
+    b.gross += r.gross;
+    b.discount += r.discount;
+    b.tax += r.tax;
+    b.tips += r.tips;
+    b.netPayout += r.netPayout;
+    b.netChannelRevenue += (r.gross - r.discount + r.tax + r.tips);
+  });
+
+  const channels = Object.values(byChannel).filter(c => c.orders || c.gross || c.netPayout);
+  const totals = channels.reduce((acc,c) => {
+    acc.orders += c.orders; acc.gross += c.gross; acc.discount += c.discount;
+    acc.tax += c.tax; acc.tips += c.tips; acc.netPayout += c.netPayout; acc.netChannelRevenue += c.netChannelRevenue;
+    return acc;
+  }, {orders:0, gross:0, discount:0, tax:0, tips:0, netPayout:0, netChannelRevenue:0});
+
+  channels.forEach(c => c.pct = totals.gross ? c.gross / totals.gross : 0);
+  channels.sort((a,b) => b.gross - a.gross);
+
+  return {
+    channels, totals,
+    blendedAOV: totals.orders ? totals.gross / totals.orders : 0,
+    netPayoutPct: totals.gross ? totals.netPayout / totals.gross : 0,
+    notes: rows.filter(r => r.notes).map(r => ({channel:r.channel, week:r.weekLabel, note:r.notes})),
+  };
+}
+
+function currentScopeRows(){
+  if (mode === 'week'){
+    const w = WEEKS.find(w => w.label === selectedWeekLabel);
+    return w ? w.rows : [];
+  } else {
+    if (!rangeStart || !rangeEnd) return [];
+    return RAW_ROWS.filter(r => r.weekStart && r.weekEnd && r.weekEnd >= rangeStart && r.weekStart <= rangeEnd);
+  }
+}
+
+function previousWeekAgg(){
+  const idx = WEEKS.findIndex(w => w.label === selectedWeekLabel);
+  if (idx <= 0) return null;
+  return aggregateRows(WEEKS[idx-1].rows);
+}
+
+/* ======================= RENDER ======================= */
+function safeRender(label, fn){
+  try{
+    fn();
+  }catch(e){
+    console.error('Dashboard section failed to render:', label, e);
+    const el = document.getElementById(label + 'Error');
+    if (el) el.textContent = 'This section failed to load (' + e.message + ')';
+  }
+}
+
+function renderAll(){
+  const rows = currentScopeRows();
+  const agg = aggregateRows(rows);
+  const prevAgg = mode === 'week' ? previousWeekAgg() : null;
+
+  safeRender('rhythm', () => renderRhythm());
+  safeRender('scopeLabel', () => renderScopeLabel(rows));
+  safeRender('kpis', () => renderKPIs(agg, prevAgg));
+  safeRender('banner', () => renderBanner(agg));
+  safeRender('channelTable', () => renderChannelTable(agg));
+  safeRender('donut', () => renderDonut(agg));
+  safeRender('bar', () => renderBar(agg));
+  safeRender('waterfall', () => renderWaterfall(agg));
+  safeRender('topChannel', () => renderTopChannel(agg));
+  safeRender('stackedMix', () => renderStackedMix());
+  safeRender('trend', () => renderTrend());
+  safeRender('multiTrend', () => renderMultiTrend());
+  safeRender('opMetrics', () => renderOpMetrics(agg));
+
+  safeRender('waterfallLabel', () => {
+    const wfLabel = document.getElementById('waterfallScopeLabel');
+    wfLabel.textContent = mode === 'week'
+      ? `Gross Sales → Net Payout, ${selectedWeekLabel || 'current week'}`
+      : `Gross Sales → Net Payout, selected range`;
+  });
+}
+
+function renderRhythm(){
+  const seg = document.querySelectorAll('#rhythmBar .seg');
+  seg.forEach(s => s.classList.remove('active'));
+  if (mode === 'week'){
+    seg.forEach(s => s.classList.add('active'));
+  } else {
+    seg.forEach(s => s.classList.add('active'));
+  }
+}
+
+function renderScopeLabel(rows){
+  const el = document.getElementById('channelScopeLabel');
+  if (mode === 'week'){
+    const w = WEEKS.find(w => w.label === selectedWeekLabel);
+    el.textContent = w ? `${fmtDateShort(w.start)} – ${fmtDateShort(w.end)}` : '';
+  } else {
+    const labels = [...new Set(rows.map(r=>r.weekLabel))];
+    el.textContent = labels.length ? `${labels.length} week(s) in range` : 'No data in range';
+  }
+}
+
+function kpiCard(label, value, delta){
+  let deltaHtml = '';
+  if (delta !== null && delta !== undefined && isFinite(delta)){
+    const cls = delta > 0.001 ? 'up' : (delta < -0.001 ? 'down' : 'flat');
+    const sign = delta > 0 ? '+' : '';
+    deltaHtml = `<div class="delta ${cls}">${sign}${(delta*100).toFixed(1)}% vs prev week</div>`;
+  }
+  return `<div class="kpi-card"><div class="label">${label}</div><div class="value">${value}</div>${deltaHtml}</div>`;
+}
+
+function pctDelta(a,b){
+  if (!b) return null;
+  return (a-b)/b;
+}
+
+function renderKPIs(agg, prevAgg){
+  const g = document.getElementById('kpiGrid');
+  const audited = agg.totals.netChannelRevenue;
+  if (prevAgg){
+    g.innerHTML = [
+      kpiCard('Total Gross Sales', fmtUSD(agg.totals.gross), pctDelta(agg.totals.gross, prevAgg.totals.gross)),
+      kpiCard('Total Orders', fmtInt(agg.totals.orders), pctDelta(agg.totals.orders, prevAgg.totals.orders)),
+      kpiCard('Blended AOV', fmtUSD(agg.blendedAOV), pctDelta(agg.blendedAOV, prevAgg.blendedAOV)),
+      kpiCard('True Audited Total', fmtUSD(audited), pctDelta(audited, prevAgg.totals.netChannelRevenue)),
+      kpiCard('True Net Payout', fmtUSD(agg.totals.netPayout), pctDelta(agg.totals.netPayout, prevAgg.totals.netPayout)),
+    ].join('');
+  } else {
+    g.innerHTML = [
+      kpiCard('Total Gross Sales', fmtUSD(agg.totals.gross), null),
+      kpiCard('Total Orders', fmtInt(agg.totals.orders), null),
+      kpiCard('Blended AOV', fmtUSD(agg.blendedAOV), null),
+      kpiCard('True Audited Total', fmtUSD(audited), null),
+      kpiCard('True Net Payout', fmtUSD(agg.totals.netPayout), null),
+    ].join('');
+  }
+}
+
+let dataSourceState = 'live'; // 'live' | 'fallback'
+let fallbackReason = '';
+const chartLibMissing = typeof Chart === 'undefined';
+
+function escHtml(s){
+  return String(s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function showErrorBanner(msg, isSetupIssue){
+  const body = isSetupIssue
+    ? msg
+    : `${msg}. Check that: the sheet is still published (File → Share → Publish to the web), the link in <code>CONFIG.PUBLISHED_CSV_URL</code> is correct, and the tab is named exactly "${CONFIG.DATA_TAB}".`;
+  document.getElementById('bannerZone').innerHTML = `
+    <div class="banner error">
+      <div>
+        <b>Couldn't load live data</b>
+        ${body}
+      </div>
+    </div>`;
+}
+function clearBanners(){
+  dataSourceState = 'live';
+  fallbackReason = '';
+}
+
+function renderBanner(agg){
+  let html = '';
+  if (chartLibMissing){
+    html += `
+      <div class="banner error">
+        <div>
+          <b>Charts can't load</b>
+          The Chart.js library (loaded from cdnjs.cloudflare.com) didn't load in this browser — the KPI numbers and table above are still accurate, but chart panels will stay blank. This usually means a firewall, ad blocker, or network policy is blocking that CDN. Try a different network, or disable any content/script blockers for this page.
+        </div>
+      </div>`;
+  }
+  if (dataSourceState === 'fallback'){
+    html += `
+      <div class="banner warn">
+        <div>
+          <b>Showing a saved snapshot, not live data</b>
+          The live connection to your Google Sheet failed just now, so these are the last known real numbers built into this file, not what's currently in your sheet. It'll switch back automatically once the connection succeeds. Reason: <code>${escHtml(fallbackReason)}</code>
+        </div>
+      </div>`;
+  }
+  if (agg.notes.length){
+    const items = agg.notes.map(n => `<li><span class="chan-tag">${n.channel}</span>${n.note}</li>`).join('');
+    html += `
+      <div class="banner warn">
+        <div style="width:100%;">
+          <b>Data quality flags for this view</b>
+          <ul>${items}</ul>
+        </div>
+      </div>`;
+  }
+  document.getElementById('bannerZone').innerHTML = html;
+}
+
+function renderChannelTable(agg){
+  const thead = document.querySelector('#channelTable thead');
+  const tbody = document.querySelector('#channelTable tbody');
+  thead.innerHTML = `<tr>
+    <th>Channel</th><th>Gross</th><th>% Total</th><th>Orders</th><th>AOV</th>
+    <th>Discount</th><th>Tax</th><th>Tips</th><th>Net Rev.</th><th>Net Payout</th>
+  </tr>`;
+  const rowsHtml = agg.channels.map(c => `
+    <tr>
+      <td class="chan-name"><span class="chan-dot" style="background:${CHANNEL_COLORS[c.channel]||'#999'}"></span>${c.channel}</td>
+      <td>${fmtUSD(c.gross)}</td>
+      <td>${fmtPct(c.pct)}</td>
+      <td>${fmtInt(c.orders)}</td>
+      <td>${fmtUSD(c.orders ? c.gross/c.orders : 0)}</td>
+      <td>${c.discount ? '-'+fmtUSD(c.discount) : '–'}</td>
+      <td>${c.tax ? fmtUSD(c.tax) : '–'}</td>
+      <td>${c.tips ? fmtUSD(c.tips) : '–'}</td>
+      <td>${fmtUSD(c.netChannelRevenue)}</td>
+      <td>${fmtUSD(c.netPayout)}</td>
+    </tr>`).join('');
+  const t = agg.totals;
+  const totalRow = `<tr class="total-row">
+    <td>Total</td><td>${fmtUSD(t.gross)}</td><td>100.0%</td><td>${fmtInt(t.orders)}</td>
+    <td>${fmtUSD(t.orders ? t.gross/t.orders : 0)}</td>
+    <td>${t.discount ? '-'+fmtUSD(t.discount) : '–'}</td><td>${fmtUSD(t.tax)}</td><td>${fmtUSD(t.tips)}</td>
+    <td>${fmtUSD(t.netChannelRevenue)}</td><td>${fmtUSD(t.netPayout)}</td>
+  </tr>`;
+  tbody.innerHTML = agg.channels.length ? (rowsHtml + totalRow) : `<tr><td colspan="10" class="empty-state">No data in this scope</td></tr>`;
+}
+
+function renderDonut(agg){
+  const ctx = document.getElementById('donutChart');
+  const labels = agg.channels.map(c=>c.channel);
+  const data = agg.channels.map(c=>c.gross);
+  const colors = agg.channels.map(c=>CHANNEL_COLORS[c.channel]||'#999');
+  if (donutChart) donutChart.destroy();
+  donutChart = new Chart(ctx, {
+    type:'doughnut',
+    data:{labels, datasets:[{data, backgroundColor:colors, borderWidth:2, borderColor:'#fff'}]},
+    options:{
+      cutout:'62%',
+      plugins:{
+        legend:{position:'bottom', labels:{font:{family:'Inter', size:12}, boxWidth:10, padding:14}},
+        tooltip:{callbacks:{label: c => `${c.label}: ${fmtUSD(c.raw)} (${fmtPct(c.raw/(data.reduce((a,b)=>a+b,0)||1))})`}}
+      }
+    }
+  });
+}
+
+function renderBar(agg){
+  const ctx = document.getElementById('barChart');
+  const labels = agg.channels.map(c=>c.channel);
+  const data = agg.channels.map(c=>c.gross);
+  const colors = agg.channels.map(c=>CHANNEL_COLORS[c.channel]||'#999');
+  const totalGross = agg.totals.gross || 1;
+  let running = 0;
+  const cumPct = data.map(v => { running += v; return running / totalGross * 100; });
+
+  if (barChart) barChart.destroy();
+  barChart = new Chart(ctx, {
+    data:{
+      labels,
+      datasets:[
+        {type:'bar', label:'Gross Sales', data, backgroundColor:colors, borderRadius:6, maxBarThickness:46, yAxisID:'y'},
+        {type:'line', label:'Cumulative %', data:cumPct, yAxisID:'y1', borderColor:'#E3A038', backgroundColor:'#E3A038', borderWidth:2.5, pointRadius:4, pointBackgroundColor:'#E3A038', tension:0.25}
+      ]
+    },
+    options:{
+      plugins:{
+        legend:{position:'bottom', labels:{font:{family:'Inter', size:12}, boxWidth:10, padding:12}},
+        tooltip:{callbacks:{label: c => c.dataset.label==='Cumulative %' ? `Cumulative: ${c.raw.toFixed(1)}%` : fmtUSD(c.raw)}}
+      },
+      scales:{
+        y:{beginAtZero:true, ticks:{callback:v=>fmtUSD0(v), font:{family:'IBM Plex Mono', size:10.5}}, grid:{color:'#E4E8E3'}},
+        y1:{position:'right', min:0, max:100, ticks:{callback:v=>v+'%', font:{family:'IBM Plex Mono', size:10.5}}, grid:{drawOnChartArea:false}},
+        x:{ticks:{font:{family:'Inter', size:12, weight:600}}, grid:{display:false}}
+      }
+    }
+  });
+}
+
+function renderWaterfall(agg){
+  const ctx = document.getElementById('waterfallChart');
+  const t = agg.totals;
+  const gross = t.gross, discount = t.discount, tax = t.tax, tips = t.tips;
+  const netChannelRevenue = t.netChannelRevenue;
+  const netPayout = t.netPayout;
+  const feesAdj = netPayout - netChannelRevenue;
+
+  let cursor = 0;
+  const steps = [];
+  steps.push({label:'Gross Sales', range:[0, gross], kind:'total'}); cursor = gross;
+  steps.push({label:'Discount', range:[cursor - discount, cursor], kind:'down'}); cursor -= discount;
+  steps.push({label:'Tax', range:[cursor, cursor + tax], kind:'up'}); cursor += tax;
+  steps.push({label:'Tips', range:[cursor, cursor + tips], kind:'up'}); cursor += tips;
+  steps.push({label:'Net Channel Rev.', range:[0, cursor], kind:'subtotal'});
+  steps.push({label:'Fees / Adj.', range: feesAdj >= 0 ? [cursor, cursor+feesAdj] : [cursor+feesAdj, cursor], kind: feesAdj>=0?'up':'down'});
+  steps.push({label:'Net Payout', range:[0, netPayout], kind:'total'});
+
+  const labels = steps.map(s=>s.label);
+  const data = steps.map(s=>s.range);
+  const colors = steps.map(s => {
+    if (s.kind==='total') return '#1F4B43';
+    if (s.kind==='subtotal') return '#8FAAA3';
+    if (s.kind==='up') return '#2F9E6E';
+    return '#C1432A';
+  });
+
+  if (waterfallChart) waterfallChart.destroy();
+  waterfallChart = new Chart(ctx, {
+    type:'bar',
+    data:{labels, datasets:[{data, backgroundColor:colors, borderRadius:5, maxBarThickness:60}]},
+    options:{
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label: c => {
+          const [a,b] = c.raw; return fmtUSD(Math.abs(b-a)) + (c.dataIndex===0||c.dataIndex===steps.length-1||steps[c.dataIndex].kind==='subtotal' ? ' (running total)' : '');
+        }}}
+      },
+      scales:{
+        y:{ticks:{callback:v=>fmtUSD0(v), font:{family:'IBM Plex Mono', size:10.5}}, grid:{color:'#E4E8E3'}},
+        x:{ticks:{font:{family:'Inter', size:11.5, weight:600}}, grid:{display:false}}
+      }
+    }
+  });
+}
+
+function renderStackedMix(){
+  const ctx = document.getElementById('stackedChart');
+  const channels = getAllChannels();
+  const labels = WEEKS.map(w=>w.label);
+  const weekAggs = WEEKS.map(w => aggregateRows(w.rows));
+
+  const datasets = channels.map((chan, idx) => ({
+    label:chan,
+    data: weekAggs.map(a => {
+      const c = a.channels.find(x=>x.channel===chan);
+      return c ? c.gross : 0;
+    }),
+    backgroundColor: colorForChannel(chan, idx),
+    borderRadius:4,
+    maxBarThickness:52,
+    stack:'gross'
+  }));
+
+  if (stackedChart) stackedChart.destroy();
+  stackedChart = new Chart(ctx, {
+    type:'bar',
+    data:{labels, datasets},
+    options:{
+      plugins:{
+        legend:{position:'bottom', labels:{font:{family:'Inter', size:12}, boxWidth:10, padding:12}},
+        tooltip:{callbacks:{label: c => `${c.dataset.label}: ${fmtUSD(c.raw)}`}}
+      },
+      scales:{
+        y:{stacked:true, beginAtZero:true, ticks:{callback:v=>fmtUSD0(v), font:{family:'IBM Plex Mono', size:10.5}}, grid:{color:'#E4E8E3'}},
+        x:{stacked:true, ticks:{font:{family:'Inter', size:11}}, grid:{display:false}}
+      }
+    }
+  });
+}
+
+const METRIC_META = {
+  gross:{label:'Gross Sales', fmt:fmtUSD0},
+  orders:{label:'Orders', fmt:fmtInt},
+  aov:{label:'AOV', fmt:fmtUSD},
+  netPayout:{label:'Net Payout', fmt:fmtUSD0},
+};
+
+function renderMultiTrend(){
+  const ctx = document.getElementById('multiTrendChart');
+  const channels = getAllChannels();
+  const labels = WEEKS.map(w=>w.label);
+  const weekAggs = WEEKS.map(w => aggregateRows(w.rows));
+  const meta = METRIC_META[explorerMetric];
+
+  const datasets = channels.map((chan, idx) => ({
+    label:chan,
+    data: weekAggs.map(a => {
+      const c = a.channels.find(x=>x.channel===chan);
+      if (!c) return 0;
+      if (explorerMetric === 'aov') return c.orders ? c.gross / c.orders : 0;
+      return c[explorerMetric];
+    }),
+    borderColor: colorForChannel(chan, idx),
+    backgroundColor: colorForChannel(chan, idx),
+    borderWidth:2.5,
+    tension:0.3,
+    pointRadius:3,
+    pointHoverRadius:6,
+  }));
+
+  if (multiTrendChart) multiTrendChart.destroy();
+  multiTrendChart = new Chart(ctx, {
+    type:'line',
+    data:{labels, datasets},
+    options:{
+      interaction:{mode:'index', intersect:false},
+      plugins:{
+        legend:{position:'bottom', labels:{font:{family:'Inter', size:12}, boxWidth:10, padding:12}},
+        tooltip:{callbacks:{label: c => `${c.dataset.label}: ${meta.fmt(c.raw)}`}}
+      },
+      scales:{
+        y:{beginAtZero:true, ticks:{callback:v=>meta.fmt(v), font:{family:'IBM Plex Mono', size:10.5}}, grid:{color:'#E4E8E3'}},
+        x:{ticks:{font:{family:'Inter', size:11}}, grid:{display:false}}
+      }
+    }
+  });
+}
+
+function renderTopChannel(agg){
+  if (!agg.channels.length){
+    document.getElementById('topChannelCrown').textContent = '—';
+    document.getElementById('topChannelName').textContent = 'No data';
+    document.getElementById('topChannelStat').textContent = '';
+    return;
+  }
+  const top = agg.channels[0];
+  document.getElementById('topChannelCrown').textContent = 'Top performing channel';
+  document.getElementById('topChannelName').textContent = top.channel;
+  document.getElementById('topChannelStat').textContent = `${fmtPct(top.pct)} of gross sales · ${fmtUSD(top.gross)} · ${fmtInt(top.orders)} orders`;
+}
+
+function renderTrend(){
+  const ctx = document.getElementById('trendChart');
+  const labels = WEEKS.map(w=>w.label);
+  const grossData = WEEKS.map(w => aggregateRows(w.rows).totals.gross);
+  const ordersData = WEEKS.map(w => aggregateRows(w.rows).totals.orders);
+  const highlightIdx = mode === 'week' ? WEEKS.findIndex(w=>w.label===selectedWeekLabel) : -1;
+  const pointColors = WEEKS.map((w,i) => i === highlightIdx ? '#E3A038' : '#1F4B43');
+  const pointRadii = WEEKS.map((w,i) => i === highlightIdx ? 6 : 3);
+
+  if (trendChart) trendChart.destroy();
+  trendChart = new Chart(ctx, {
+    data:{
+      labels,
+      datasets:[
+        {
+          type:'line', label:'Gross Sales', data:grossData, yAxisID:'y',
+          borderColor:'#1F4B43', backgroundColor:'rgba(31,75,67,0.08)', fill:true, tension:0.3,
+          pointBackgroundColor:pointColors, pointRadius:pointRadii, pointHoverRadius:7, borderWidth:2.5
+        },
+        {
+          type:'bar', label:'Orders', data:ordersData, yAxisID:'y1',
+          backgroundColor:'rgba(124,92,191,0.35)', borderRadius:5, maxBarThickness:34
+        }
+      ]
+    },
+    options:{
+      interaction:{mode:'index', intersect:false},
+      plugins:{
+        legend:{position:'bottom', labels:{font:{family:'Inter', size:12}, boxWidth:10, padding:14}},
+        tooltip:{callbacks:{ label: c => c.dataset.label === 'Gross Sales' ? `Gross: ${fmtUSD(c.raw)}` : `Orders: ${fmtInt(c.raw)}` }}
+      },
+      scales:{
+        y:{position:'left', ticks:{callback:v=>fmtUSD0(v), font:{family:'IBM Plex Mono', size:10.5}}, grid:{color:'#E4E8E3'}},
+        y1:{position:'right', ticks:{callback:v=>fmtInt(v), font:{family:'IBM Plex Mono', size:10.5}}, grid:{drawOnChartArea:false}},
+        x:{ticks:{font:{family:'Inter', size:11}}, grid:{display:false}}
+      }
+    }
+  });
+}
+
+function renderOpMetrics(agg){
+  const t = agg.totals;
+  const g = document.getElementById('opGrid');
+  g.innerHTML = `
+    <div class="op-card"><div class="label">Total Discounts Given</div><div class="value neg">${t.discount ? '-'+fmtUSD(t.discount) : '$0.00'}</div></div>
+    <div class="op-card"><div class="label">Total Taxes Collected</div><div class="value">${fmtUSD(t.tax)}</div></div>
+    <div class="op-card"><div class="label">Total Tips Collected</div><div class="value">${fmtUSD(t.tips)}</div></div>
+    <div class="op-card"><div class="label">Net Payout % of Gross</div><div class="value">${fmtPct(agg.netPayoutPct)}</div></div>
+  `;
+}
+
+/* ======================= LIVE STATE UI ======================= */
+function setLiveState(s){
+  const dot = document.getElementById('liveDot');
+  const txt = document.getElementById('liveText');
+  dot.classList.remove('stale','error');
+  const now = new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+  if (s === 'loading'){ txt.textContent = 'Syncing…'; }
+  else if (s === 'ok'){ txt.textContent = 'Live · updated ' + now; }
+  else if (s === 'error'){ dot.classList.add('error'); txt.textContent = 'Connection error'; }
+  else if (s === 'fallback'){ dot.classList.add('stale'); txt.textContent = 'Showing saved snapshot'; }
+}
+function flashUpdated(){
+  const txt = document.getElementById('liveText');
+  const prev = txt.textContent;
+  txt.textContent = 'Updated just now';
+  setTimeout(()=>{ if (document.getElementById('liveDot')) setLiveState('ok'); }, 2500);
+}
+
+/* ======================= EVENTS ======================= */
+document.getElementById('modeToggle').addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  mode = btn.dataset.mode;
+  document.querySelectorAll('#modeToggle button').forEach(b=>b.classList.toggle('active', b===btn));
+  document.getElementById('weekPickerGroup').style.display = mode==='week' ? 'flex' : 'none';
+  document.getElementById('rangePickerGroup').style.display = mode==='range' ? 'flex' : 'none';
+  renderAll();
+});
+
+document.getElementById('weekSelect').addEventListener('change', e => {
+  selectedWeekLabel = e.target.value;
+  renderAll();
+});
+
+document.getElementById('rangeStart').addEventListener('change', e => {
+  rangeStart = e.target.value ? new Date(e.target.value) : null;
+  renderAll();
+});
+document.getElementById('rangeEnd').addEventListener('change', e => {
+  rangeEnd = e.target.value ? new Date(e.target.value) : null;
+  renderAll();
+});
+
+document.getElementById('metricToggle').addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  explorerMetric = btn.dataset.metric;
+  document.querySelectorAll('#metricToggle button').forEach(b=>b.classList.toggle('active', b===btn));
+  renderMultiTrend();
+});
+
+document.getElementById('refreshBtn').addEventListener('click', () => {
+  document.getElementById('refreshIcon').classList.add('spin');
+  fetchData(false).finally(()=> {
+    setTimeout(()=>document.getElementById('refreshIcon').classList.remove('spin'), 500);
+  });
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') fetchData(true);
+});
+
+/* ======================= BOOT ======================= */
+fetchData(false);
+pollTimer = setInterval(()=>fetchData(true), CONFIG.REFRESH_MS);
+</script>
+</body>
+</html>
