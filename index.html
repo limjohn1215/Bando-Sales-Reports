@@ -939,19 +939,19 @@ function renderKPIs(agg, prevAgg){
   const audited = agg.totals.netChannelRevenue;
   if (prevAgg){
     g.innerHTML = [
-      kpiCard('Total Gross Sales', fmtUSD(agg.totals.gross), pctDelta(agg.totals.gross, prevAgg.totals.gross)),
-      kpiCard('Total Orders', fmtInt(agg.totals.orders), pctDelta(agg.totals.orders, prevAgg.totals.orders)),
-      kpiCard('Blended AOV', fmtUSD(agg.blendedAOV), pctDelta(agg.blendedAOV, prevAgg.blendedAOV)),
-      kpiCard('True Audited Total', fmtUSD(audited), pctDelta(audited, prevAgg.totals.netChannelRevenue)),
-      kpiCard('True Net Payout', fmtUSD(agg.totals.netPayout), pctDelta(agg.totals.netPayout, prevAgg.totals.netPayout)),
+      kpiCard('Gross Sales', fmtUSD(agg.totals.gross), pctDelta(agg.totals.gross, prevAgg.totals.gross)),
+      kpiCard('Net Payout', fmtUSD(agg.totals.netPayout), pctDelta(agg.totals.netPayout, prevAgg.totals.netPayout)),
+      kpiCard('Orders', fmtInt(agg.totals.orders), pctDelta(agg.totals.orders, prevAgg.totals.orders)),
+      kpiCard('Avg Order Value', fmtUSD(agg.blendedAOV), pctDelta(agg.blendedAOV, prevAgg.blendedAOV)),
+      kpiCard('Net Revenue', fmtUSD(audited), pctDelta(audited, prevAgg.totals.netChannelRevenue)),
     ].join('');
   } else {
     g.innerHTML = [
-      kpiCard('Total Gross Sales', fmtUSD(agg.totals.gross), null),
-      kpiCard('Total Orders', fmtInt(agg.totals.orders), null),
-      kpiCard('Blended AOV', fmtUSD(agg.blendedAOV), null),
-      kpiCard('True Audited Total', fmtUSD(audited), null),
-      kpiCard('True Net Payout', fmtUSD(agg.totals.netPayout), null),
+      kpiCard('Gross Sales', fmtUSD(agg.totals.gross), null),
+      kpiCard('Net Payout', fmtUSD(agg.totals.netPayout), null),
+      kpiCard('Orders', fmtInt(agg.totals.orders), null),
+      kpiCard('Avg Order Value', fmtUSD(agg.blendedAOV), null),
+      kpiCard('Net Revenue', fmtUSD(audited), null),
     ].join('');
   }
 }
@@ -1008,13 +1008,14 @@ function renderChannelTable(agg){
   const thead = document.querySelector('#channelTable thead');
   const tbody = document.querySelector('#channelTable tbody');
   thead.innerHTML = `<tr>
-    <th>Channel</th><th>Gross</th><th>%</th><th>Orders</th><th>AOV</th>
-    <th>Disc.</th><th>Tax</th><th>Tips</th><th>Net Rev.</th><th>Payout</th>
+    <th>Channel</th><th>Gross</th><th>Payout</th><th>%</th><th>Orders</th><th>Avg Order</th>
+    <th>Discount</th><th>Tax</th><th>Tips</th><th>Net Revenue</th>
   </tr>`;
   const rowsHtml = agg.channels.map(c => `
     <tr>
       <td class="chan-name"><span class="chan-dot" style="background:${CHANNEL_COLORS[c.channel]||'#999'}"></span>${c.channel}</td>
       <td>${fmtUSD(c.gross)}</td>
+      <td>${fmtUSD(c.netPayout)}</td>
       <td>${fmtPct(c.pct)}</td>
       <td>${fmtInt(c.orders)}</td>
       <td>${fmtUSD(c.orders ? c.gross/c.orders : 0)}</td>
@@ -1022,14 +1023,13 @@ function renderChannelTable(agg){
       <td>${fmtUSD(c.tax)}</td>
       <td>${fmtUSD(c.tips)}</td>
       <td>${fmtUSD(c.netChannelRevenue)}</td>
-      <td>${fmtUSD(c.netPayout)}</td>
     </tr>`).join('');
   const t = agg.totals;
   const totalRow = `<tr class="total-row">
-    <td>Total</td><td>${fmtUSD(t.gross)}</td><td>100.0%</td><td>${fmtInt(t.orders)}</td>
+    <td>Total</td><td>${fmtUSD(t.gross)}</td><td>${fmtUSD(t.netPayout)}</td><td>100.0%</td><td>${fmtInt(t.orders)}</td>
     <td>${fmtUSD(t.orders ? t.gross/t.orders : 0)}</td>
     <td>${t.discount ? '-'+fmtUSD(t.discount) : '$0.00'}</td><td>${fmtUSD(t.tax)}</td><td>${fmtUSD(t.tips)}</td>
-    <td>${fmtUSD(t.netChannelRevenue)}</td><td>${fmtUSD(t.netPayout)}</td>
+    <td>${fmtUSD(t.netChannelRevenue)}</td>
   </tr>`;
   tbody.innerHTML = agg.channels.length ? (rowsHtml + totalRow) : `<tr><td colspan="10" class="empty-state">No data in this scope</td></tr>`;
 }
