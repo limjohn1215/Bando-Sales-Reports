@@ -375,6 +375,7 @@
   }
   .card h2 .sub{font-family:var(--font-body);font-weight:700;font-size:11.5px;color:var(--muted);text-transform:none;letter-spacing:0;}
 
+  .table-scroll{overflow-x:auto;margin:0 -4px;padding:0 4px;}
   table{width:100%;border-collapse:collapse;font-size:13px;}
   th{
     text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.08em;
@@ -492,7 +493,9 @@
   <div class="grid-2">
     <div class="card">
       <h2>Sales by channel <span class="sub" id="channelScopeLabel"></span></h2>
-      <table id="channelTable"><thead></thead><tbody></tbody></table>
+      <div class="table-scroll">
+        <table id="channelTable"><thead></thead><tbody></tbody></table>
+      </div>
     </div>
     <div class="card">
       <h2>Share of gross sales</h2>
@@ -502,7 +505,7 @@
 
   <div class="grid-2" style="grid-template-columns:1fr 1fr;">
     <div class="card">
-      <h2>Channel contribution <span class="sub">Ranked · cumulative % (Pareto)</span></h2>
+      <h2>Channel contribution <span class="sub">Ranked by gross sales</span></h2>
       <div class="chart-wrap"><canvas id="barChart"></canvas></div>
     </div>
     <div class="card top-channel-card">
@@ -514,7 +517,7 @@
   </div>
 
   <div class="card" style="margin-bottom:16px;">
-    <h2>Money flow <span class="sub" id="waterfallScopeLabel">Gross Sales → Net Payout, current scope</span></h2>
+    <h2>Where the money goes <span class="sub" id="waterfallScopeLabel">Gross Sales, deductions, and Net Payout, current scope</span></h2>
     <div class="chart-wrap"><canvas id="waterfallChart"></canvas></div>
   </div>
 
@@ -523,9 +526,15 @@
     <div class="chart-wrap tall"><canvas id="stackedChart"></canvas></div>
   </div>
 
-  <div class="card" style="margin-bottom:16px;">
-    <h2>Trend across all weeks <span class="sub">Gross sales &amp; orders, full history</span></h2>
-    <div class="chart-wrap tall"><canvas id="trendChart"></canvas></div>
+  <div class="grid-2" style="grid-template-columns:1fr 1fr;margin-bottom:16px;">
+    <div class="card">
+      <h2>Gross sales by week <span class="sub">Full history</span></h2>
+      <div class="chart-wrap"><canvas id="trendGrossChart"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Orders by week <span class="sub">Full history</span></h2>
+      <div class="chart-wrap"><canvas id="trendOrdersChart"></canvas></div>
+    </div>
   </div>
 
   <div class="card" style="margin-bottom:16px;">
@@ -571,7 +580,7 @@ let mode = 'week';           // 'week' | 'range'
 let selectedWeekLabel = null;
 let rangeStart = null;
 let rangeEnd = null;
-let donutChart, barChart, trendChart, waterfallChart, stackedChart, multiTrendChart;
+let donutChart, barChart, trendChart, trendOrdersChart, waterfallChart, stackedChart, multiTrendChart;
 let explorerMetric = 'gross';
 let lastCsvHash = null;
 let pollTimer = null;
@@ -883,8 +892,8 @@ function renderAll(){
   safeRender('waterfallLabel', () => {
     const wfLabel = document.getElementById('waterfallScopeLabel');
     wfLabel.textContent = mode === 'week'
-      ? `Gross Sales → Net Payout, ${selectedWeekLabel || 'current week'}`
-      : `Gross Sales → Net Payout, selected range`;
+      ? `Gross Sales, deductions, and Net Payout, ${selectedWeekLabel || 'current week'}`
+      : `Gross Sales, deductions, and Net Payout, selected range`;
   });
 }
 
@@ -1008,9 +1017,9 @@ function renderChannelTable(agg){
       <td>${fmtPct(c.pct)}</td>
       <td>${fmtInt(c.orders)}</td>
       <td>${fmtUSD(c.orders ? c.gross/c.orders : 0)}</td>
-      <td>${c.discount ? '-'+fmtUSD(c.discount) : '–'}</td>
-      <td>${c.tax ? fmtUSD(c.tax) : '–'}</td>
-      <td>${c.tips ? fmtUSD(c.tips) : '–'}</td>
+      <td>${c.discount ? '-'+fmtUSD(c.discount) : '$0.00'}</td>
+      <td>${fmtUSD(c.tax)}</td>
+      <td>${fmtUSD(c.tips)}</td>
       <td>${fmtUSD(c.netChannelRevenue)}</td>
       <td>${fmtUSD(c.netPayout)}</td>
     </tr>`).join('');
@@ -1018,7 +1027,7 @@ function renderChannelTable(agg){
   const totalRow = `<tr class="total-row">
     <td>Total</td><td>${fmtUSD(t.gross)}</td><td>100.0%</td><td>${fmtInt(t.orders)}</td>
     <td>${fmtUSD(t.orders ? t.gross/t.orders : 0)}</td>
-    <td>${t.discount ? '-'+fmtUSD(t.discount) : '–'}</td><td>${fmtUSD(t.tax)}</td><td>${fmtUSD(t.tips)}</td>
+    <td>${t.discount ? '-'+fmtUSD(t.discount) : '$0.00'}</td><td>${fmtUSD(t.tax)}</td><td>${fmtUSD(t.tips)}</td>
     <td>${fmtUSD(t.netChannelRevenue)}</td><td>${fmtUSD(t.netPayout)}</td>
   </tr>`;
   tbody.innerHTML = agg.channels.length ? (rowsHtml + totalRow) : `<tr><td colspan="10" class="empty-state">No data in this scope</td></tr>`;
@@ -1048,27 +1057,23 @@ function renderBar(agg){
   const labels = agg.channels.map(c=>c.channel);
   const data = agg.channels.map(c=>c.gross);
   const colors = agg.channels.map(c=>CHANNEL_COLORS[c.channel]||'#999');
-  const totalGross = agg.totals.gross || 1;
-  let running = 0;
-  const cumPct = data.map(v => { running += v; return running / totalGross * 100; });
 
   if (barChart) barChart.destroy();
   barChart = new Chart(ctx, {
+    type:'bar',
     data:{
       labels,
       datasets:[
-        {type:'bar', label:'Gross Sales', data, backgroundColor:colors, borderRadius:0, maxBarThickness:46, yAxisID:'y'},
-        {type:'line', label:'Cumulative %', data:cumPct, yAxisID:'y1', borderColor:'#F4B43A', backgroundColor:'#F4B43A', borderWidth:2.5, pointRadius:4, pointBackgroundColor:'#F4B43A', tension:0.25}
+        {label:'Gross Sales', data, backgroundColor:colors, borderRadius:0, maxBarThickness:46, base:0}
       ]
     },
     options:{
       plugins:{
-        legend:{position:'bottom', labels:{font:{family:'Inter', size:12}, boxWidth:10, padding:12}},
-        tooltip:{callbacks:{label: c => c.dataset.label==='Cumulative %' ? `Cumulative: ${c.raw.toFixed(1)}%` : fmtUSD(c.raw)}}
+        legend:{display:false},
+        tooltip:{callbacks:{label: c => fmtUSD(c.raw)}}
       },
       scales:{
-        y:{beginAtZero:true, ticks:{callback:v=>fmtUSD0(v), font:{family:'IBM Plex Mono', size:10.5}}, grid:{color:'rgba(255,244,223,0.10)'}},
-        y1:{position:'right', min:0, max:100, ticks:{callback:v=>v+'%', font:{family:'IBM Plex Mono', size:10.5}}, grid:{drawOnChartArea:false}},
+        y:{beginAtZero:true, min:0, ticks:{callback:v=>fmtUSD0(v), font:{family:'IBM Plex Mono', size:10.5}}, grid:{color:'rgba(255,244,223,0.10)'}},
         x:{ticks:{font:{family:'Inter', size:12, weight:600}}, grid:{display:false}}
       }
     }
@@ -1083,18 +1088,20 @@ function renderWaterfall(agg){
   const netPayout = t.netPayout;
   const feesAdj = netPayout - netChannelRevenue;
 
-  let cursor = 0;
-  const steps = [];
-  steps.push({label:'Gross Sales', range:[0, gross], kind:'total'}); cursor = gross;
-  steps.push({label:'Discount', range:[cursor - discount, cursor], kind:'down'}); cursor -= discount;
-  steps.push({label:'Tax', range:[cursor, cursor + tax], kind:'up'}); cursor += tax;
-  steps.push({label:'Tips', range:[cursor, cursor + tips], kind:'up'}); cursor += tips;
-  steps.push({label:'Net Channel Rev.', range:[0, cursor], kind:'subtotal'});
-  steps.push({label:'Fees / Adj.', range: feesAdj >= 0 ? [cursor, cursor+feesAdj] : [cursor+feesAdj, cursor], kind: feesAdj>=0?'up':'down'});
-  steps.push({label:'Net Payout', range:[0, netPayout], kind:'total'});
+  // Every bar shows its own plain dollar amount, starting from $0 — no floating
+  // segments. Color tells you whether it's a total, an addition, or a deduction.
+  const steps = [
+    {label:'Gross Sales', value: gross, kind:'total'},
+    {label:'Discount', value: discount, kind:'down'},
+    {label:'Tax', value: tax, kind:'up'},
+    {label:'Tips', value: tips, kind:'up'},
+    {label:'Net Channel Rev.', value: netChannelRevenue, kind:'subtotal'},
+    {label:'Fees / Adj.', value: Math.abs(feesAdj), kind: feesAdj >= 0 ? 'up' : 'down'},
+    {label:'Net Payout', value: netPayout, kind:'total'},
+  ];
 
   const labels = steps.map(s=>s.label);
-  const data = steps.map(s=>s.range);
+  const data = steps.map(s=>s.value);
   const colors = steps.map(s => {
     if (s.kind==='total') return '#F4B43A';
     if (s.kind==='subtotal') return '#9D6A4A';
@@ -1105,16 +1112,14 @@ function renderWaterfall(agg){
   if (waterfallChart) waterfallChart.destroy();
   waterfallChart = new Chart(ctx, {
     type:'bar',
-    data:{labels, datasets:[{data, backgroundColor:colors, borderRadius:0, maxBarThickness:60}]},
+    data:{labels, datasets:[{data, backgroundColor:colors, borderRadius:0, maxBarThickness:60, base:0}]},
     options:{
       plugins:{
         legend:{display:false},
-        tooltip:{callbacks:{label: c => {
-          const [a,b] = c.raw; return fmtUSD(Math.abs(b-a)) + (c.dataIndex===0||c.dataIndex===steps.length-1||steps[c.dataIndex].kind==='subtotal' ? ' (running total)' : '');
-        }}}
+        tooltip:{callbacks:{label: c => fmtUSD(c.raw)}}
       },
       scales:{
-        y:{ticks:{callback:v=>fmtUSD0(v), font:{family:'IBM Plex Mono', size:10.5}}, grid:{color:'rgba(255,244,223,0.10)'}},
+        y:{beginAtZero:true, min:0, ticks:{callback:v=>fmtUSD0(v), font:{family:'IBM Plex Mono', size:10.5}}, grid:{color:'rgba(255,244,223,0.10)'}},
         x:{ticks:{font:{family:'Inter', size:11.5, weight:600}}, grid:{display:false}}
       }
     }
@@ -1218,39 +1223,49 @@ function renderTopChannel(agg){
 }
 
 function renderTrend(){
-  const ctx = document.getElementById('trendChart');
   const labels = WEEKS.map(w=>w.label);
   const grossData = WEEKS.map(w => aggregateRows(w.rows).totals.gross);
   const ordersData = WEEKS.map(w => aggregateRows(w.rows).totals.orders);
   const highlightIdx = mode === 'week' ? WEEKS.findIndex(w=>w.label===selectedWeekLabel) : -1;
-  const pointColors = WEEKS.map((w,i) => i === highlightIdx ? '#F4B43A' : '#F4B43A');
-  const pointRadii = WEEKS.map((w,i) => i === highlightIdx ? 6 : 3);
+  const pointColors = WEEKS.map((w,i) => i === highlightIdx ? '#FFD15E' : '#F4B43A');
+  const pointRadii = WEEKS.map((w,i) => i === highlightIdx ? 7 : 3);
+  const barColors = WEEKS.map((w,i) => i === highlightIdx ? '#F04A31' : 'rgba(232,67,46,0.55)');
 
+  const grossCtx = document.getElementById('trendGrossChart');
   if (trendChart) trendChart.destroy();
-  trendChart = new Chart(ctx, {
-    data:{
-      labels,
-      datasets:[
-        {
-          type:'line', label:'Gross Sales', data:grossData, yAxisID:'y',
-          borderColor:'#F4B43A', backgroundColor:'rgba(244,180,58,0.09)', fill:true, tension:0.3,
-          pointBackgroundColor:pointColors, pointRadius:pointRadii, pointHoverRadius:7, borderWidth:2.5
-        },
-        {
-          type:'bar', label:'Orders', data:ordersData, yAxisID:'y1',
-          backgroundColor:'rgba(232,67,46,0.34)', borderRadius:0, maxBarThickness:34
-        }
-      ]
-    },
+  trendChart = new Chart(grossCtx, {
+    type:'line',
+    data:{labels, datasets:[{
+      label:'Gross Sales', data:grossData,
+      borderColor:'#F4B43A', backgroundColor:'rgba(244,180,58,0.12)', fill:true, tension:0.3,
+      pointBackgroundColor:pointColors, pointRadius:pointRadii, pointHoverRadius:7, borderWidth:2.5
+    }]},
     options:{
-      interaction:{mode:'index', intersect:false},
       plugins:{
-        legend:{position:'bottom', labels:{font:{family:'Inter', size:12}, boxWidth:10, padding:14}},
-        tooltip:{callbacks:{ label: c => c.dataset.label === 'Gross Sales' ? `Gross: ${fmtUSD(c.raw)}` : `Orders: ${fmtInt(c.raw)}` }}
+        legend:{display:false},
+        tooltip:{callbacks:{label: c => fmtUSD(c.raw)}}
       },
       scales:{
-        y:{position:'left', ticks:{callback:v=>fmtUSD0(v), font:{family:'IBM Plex Mono', size:10.5}}, grid:{color:'rgba(255,244,223,0.10)'}},
-        y1:{position:'right', ticks:{callback:v=>fmtInt(v), font:{family:'IBM Plex Mono', size:10.5}}, grid:{drawOnChartArea:false}},
+        y:{beginAtZero:true, min:0, ticks:{callback:v=>fmtUSD0(v), font:{family:'IBM Plex Mono', size:10.5}}, grid:{color:'rgba(255,244,223,0.10)'}},
+        x:{ticks:{font:{family:'Inter', size:11}}, grid:{display:false}}
+      }
+    }
+  });
+
+  const ordersCtx = document.getElementById('trendOrdersChart');
+  if (trendOrdersChart) trendOrdersChart.destroy();
+  trendOrdersChart = new Chart(ordersCtx, {
+    type:'bar',
+    data:{labels, datasets:[{
+      label:'Orders', data:ordersData, backgroundColor:barColors, borderRadius:0, maxBarThickness:40, base:0
+    }]},
+    options:{
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label: c => fmtInt(c.raw) + ' orders'}}
+      },
+      scales:{
+        y:{beginAtZero:true, min:0, ticks:{callback:v=>fmtInt(v), font:{family:'IBM Plex Mono', size:10.5}}, grid:{color:'rgba(255,244,223,0.10)'}},
         x:{ticks:{font:{family:'Inter', size:11}}, grid:{display:false}}
       }
     }
