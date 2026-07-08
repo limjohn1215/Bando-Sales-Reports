@@ -136,21 +136,6 @@
     background:radial-gradient(circle at 78% 0%, rgba(255,209,94,.18), transparent 36%);
     pointer-events:none;
   }
-  header.top::after{
-    content:"AUTHORIZED SALES VIEW";
-    position:absolute;
-    right:-42px;
-    bottom:20px;
-    transform:rotate(-10deg);
-    border:2px solid rgba(232,67,46,.52);
-    color:rgba(232,67,46,.68);
-    font-family:var(--font-mono);
-    font-size:11px;
-    font-weight:700;
-    letter-spacing:.18em;
-    padding:8px 50px;
-    border-radius:7px;
-  }
   .brand{position:relative;z-index:1;min-width:min(100%,520px);}
   .brand .eyebrow{
     display:inline-flex;
@@ -437,7 +422,6 @@
     .kpi-grid{grid-template-columns:1fr;}
     .op-grid{grid-template-columns:1fr;}
     header.top{flex-direction:column;padding:18px;}
-    header.top::after{display:none;}
     .brand h1{font-size:58px;}
     .card{padding:17px 15px;}
     .card h2{font-size:22px;}
