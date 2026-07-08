@@ -345,6 +345,7 @@
 
   /* ---------- CARDS / LAYOUT ---------- */
   .grid-2{display:grid;grid-template-columns:1.55fr 1fr;gap:16px;margin-bottom:16px;align-items:start;}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;align-items:start;}
   .card{
     background:linear-gradient(180deg, rgba(32,24,17,.97), rgba(17,13,10,.97));
     border:1px solid var(--line);
@@ -378,11 +379,12 @@
   .table-scroll{overflow-x:auto;margin:0 -4px;padding:0 4px;}
   table{width:100%;border-collapse:collapse;font-size:13px;}
   th{
-    text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.08em;
-    color:var(--primary);font-weight:900;padding:0 8px 9px;border-bottom:1px solid var(--line);
+    text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.06em;
+    color:var(--primary);font-weight:900;padding:0 6px 9px;border-bottom:1px solid var(--line);
+    white-space:nowrap;
   }
   th:first-child, td:first-child{text-align:left;}
-  td{padding:10px 8px;text-align:right;font-family:var(--font-mono);border-bottom:1px solid rgba(255,244,223,.09);color:#F8E8CD;}
+  td{padding:10px 6px;text-align:right;font-family:var(--font-mono);border-bottom:1px solid rgba(255,244,223,.09);color:#F8E8CD;white-space:nowrap;}
   tr:last-child td{border-bottom:none;}
   tr:hover td{background:rgba(255,244,223,.035);}
   tr.total-row td{font-weight:800;border-top:2px solid var(--primary);border-bottom:none;padding-top:12px;color:var(--ink);}
@@ -415,6 +417,7 @@
   @media (max-width: 980px){
     .kpi-grid{grid-template-columns:repeat(2,1fr);}
     .grid-2{grid-template-columns:1fr !important;}
+    .grid-3{grid-template-columns:1fr !important;}
     .op-grid{grid-template-columns:repeat(2,1fr);}
     .header-right{align-items:flex-start;}
   }
@@ -490,20 +493,18 @@
 
   <div class="kpi-grid" id="kpiGrid"></div>
 
-  <div class="grid-2">
-    <div class="card">
-      <h2>Sales by channel <span class="sub" id="channelScopeLabel"></span></h2>
-      <div class="table-scroll">
-        <table id="channelTable"><thead></thead><tbody></tbody></table>
-      </div>
-    </div>
-    <div class="card">
-      <h2>Share of gross sales</h2>
-      <div class="chart-wrap tall"><canvas id="donutChart"></canvas></div>
+  <div class="card" style="margin-bottom:16px;">
+    <h2>Sales by channel <span class="sub" id="channelScopeLabel"></span></h2>
+    <div class="table-scroll">
+      <table id="channelTable"><thead></thead><tbody></tbody></table>
     </div>
   </div>
 
-  <div class="grid-2" style="grid-template-columns:1fr 1fr;">
+  <div class="grid-3">
+    <div class="card">
+      <h2>Share of gross sales</h2>
+      <div class="chart-wrap"><canvas id="donutChart"></canvas></div>
+    </div>
     <div class="card">
       <h2>Channel contribution <span class="sub">Ranked by gross sales</span></h2>
       <div class="chart-wrap"><canvas id="barChart"></canvas></div>
@@ -1007,8 +1008,8 @@ function renderChannelTable(agg){
   const thead = document.querySelector('#channelTable thead');
   const tbody = document.querySelector('#channelTable tbody');
   thead.innerHTML = `<tr>
-    <th>Channel</th><th>Gross</th><th>% Total</th><th>Orders</th><th>AOV</th>
-    <th>Discount</th><th>Tax</th><th>Tips</th><th>Net Rev.</th><th>Net Payout</th>
+    <th>Channel</th><th>Gross</th><th>%</th><th>Orders</th><th>AOV</th>
+    <th>Disc.</th><th>Tax</th><th>Tips</th><th>Net Rev.</th><th>Payout</th>
   </tr>`;
   const rowsHtml = agg.channels.map(c => `
     <tr>
